@@ -1,0 +1,21 @@
+version: '3'
+
+tasks:
+  test:
+    cmds:
+      - go test ./...
+  fmt:
+    deps: [ test ]
+    cmds:
+      - go fmt ./...
+  vet:
+    deps: [fmt]
+    cmds:
+      - go vet ./...
+  build:
+    deps: [vet]
+    cmds:
+      - go build
+  default:
+    desc: "Start if no command specified"
+    deps: [build]
