@@ -18,4 +18,5 @@ tasks:
       - go build
   default:
     desc: "Start if no command specified"
-    deps: [build]
+    deps: [ build ]
+
