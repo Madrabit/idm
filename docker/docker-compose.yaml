@@ -16,6 +16,7 @@ services:
     environment:
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=idm
     volumes:
       - data:/var/lib/postgresql/data
       - export:/export
