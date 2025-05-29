@@ -50,7 +50,13 @@ func eachEnvFile(t *testing.T, str string) string {
 	t.Cleanup(func() {
 		os.Remove(temp.Name())
 	})
-	temp.WriteString(str)
+	_, err = temp.WriteString(str)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err != nil {
+		return ""
+	}
 	temp.Close()
 	return temp.Name()
 }
