@@ -1,7 +1,6 @@
-version: "3"
-
 volumes:
   data:
+  data_test:
   export:
 networks:
   idm_network:
@@ -19,6 +18,21 @@ services:
       - POSTGRES_DB=idm
     volumes:
       - data:/var/lib/postgresql/data
+      - export:/export
+    networks:
+      idm_network:
+  test_postgres_db:
+    image: docker.io/postgres:17-alpine
+    container_name: test_postgres-server
+    hostname: test_postgres-db
+    ports:
+      - 127.0.0.1:5434:5432
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=test_idm
+    volumes:
+      - data_test:/var/lib/postgresql/data
       - export:/export
     networks:
       idm_network:
