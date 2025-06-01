@@ -19,12 +19,12 @@ func NewRoleRepository(db *sqlx.DB) *RoleRepository {
 type RoleEntity struct {
 	Id       int64     `db:"id"`
 	Name     string    `db:"name"`
-	CreateAt time.Time `db:"create_at"`
-	UpdateAt time.Time `db:"update_at"`
+	CreateAt time.Time `db:"created_at"`
+	UpdateAt time.Time `db:"updated_at"`
 }
 
 func (r *RoleRepository) FindById(id int64) (role RoleEntity, err error) {
-	err = r.db.Get(&role, "SELECT * FROM role WHERE id=?", id)
+	err = r.db.Get(&role, "SELECT * FROM role WHERE id=$1", id)
 	return role, err
 }
 
@@ -46,23 +46,18 @@ func (r *RoleRepository) GetAll() ([]RoleEntity, error) {
 }
 
 func (r *RoleRepository) Add(role RoleEntity) (int64, error) {
-	_, err := r.FindById(role.Id)
-	if err == nil {
-		return -1, fmt.Errorf("Role %d already exists ", role.Id)
-	}
-	if !errors.Is(err, sql.ErrNoRows) {
-		return -1, fmt.Errorf("db error %w", err)
-	}
-	_, err = r.db.Exec("INSERT INTO Role (Id, Name) VALUES (?, ?)", role.Id, role.Name)
+	var id int64
+	err := r.db.QueryRow("INSERT INTO Role (name) VALUES ($1) RETURNING id",
+		role.Name).Scan(&id)
 	if err != nil {
 		return -1, err
 	}
-	return role.Id, nil
+	return id, nil
 }
 
 func (r *RoleRepository) GetGroupById(ids []int64) (roles []RoleEntity, err error) {
 	if len(ids) == 0 {
-		return nil, errors.New("Role id can not be empty")
+		return nil, errors.New("role id can not be empty")
 	}
 	q, args, err := sqlx.In("SELECT * FROM role WHERE id IN (?)", ids)
 	if err != nil {
@@ -76,15 +71,15 @@ func (r *RoleRepository) GetGroupById(ids []int64) (roles []RoleEntity, err erro
 	return roles, nil
 }
 
-func (r *RoleRepository) Delete(role RoleEntity) (err error) {
-	e, err := r.FindById(role.Id)
+func (r *RoleRepository) Delete(id int64) (err error) {
+	e, err := r.FindById(id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return fmt.Errorf("role do not exists %d", role.Id)
+			return fmt.Errorf("role do not exists %d", id)
 		}
 		return fmt.Errorf("db error %w", err)
 	}
-	_, err = r.db.Exec("DELETE FROM role WHERE id=?", e.Id)
+	_, err = r.db.Exec("DELETE FROM role WHERE id=$1", e.Id)
 	if err != nil {
 		return fmt.Errorf("failed to delete role: %v", err)
 	}
