@@ -1,42 +1,34 @@
-package Role
+package role
 
 import (
 	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/jmoiron/sqlx"
-	"time"
 )
 
-type RoleRepository struct {
+type Repository struct {
 	db *sqlx.DB
 }
 
-func NewRoleRepository(db *sqlx.DB) *RoleRepository {
-	return &RoleRepository{db: db}
+func NewRoleRepository(db *sqlx.DB) *Repository {
+	return &Repository{db: db}
 }
 
-type RoleEntity struct {
-	Id       int64     `db:"id"`
-	Name     string    `db:"name"`
-	CreateAt time.Time `db:"created_at"`
-	UpdateAt time.Time `db:"updated_at"`
-}
-
-func (r *RoleRepository) FindById(id int64) (role RoleEntity, err error) {
+func (r *Repository) FindById(id int64) (role Entity, err error) {
 	err = r.db.Get(&role, "SELECT * FROM role WHERE id=$1", id)
 	return role, err
 }
 
-func (r *RoleRepository) GetAll() ([]RoleEntity, error) {
-	var roles []RoleEntity
+func (r *Repository) GetAll() ([]Entity, error) {
+	var roles []Entity
 	rows, err := r.db.Queryx("SELECT * FROM role")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var role RoleEntity
+		var role Entity
 		if err = rows.StructScan(&role); err != nil {
 			return nil, err
 		}
@@ -45,7 +37,7 @@ func (r *RoleRepository) GetAll() ([]RoleEntity, error) {
 	return roles, nil
 }
 
-func (r *RoleRepository) Add(role RoleEntity) (int64, error) {
+func (r *Repository) Add(role Entity) (int64, error) {
 	var id int64
 	err := r.db.QueryRow("INSERT INTO Role (name) VALUES ($1) RETURNING id",
 		role.Name).Scan(&id)
@@ -55,7 +47,7 @@ func (r *RoleRepository) Add(role RoleEntity) (int64, error) {
 	return id, nil
 }
 
-func (r *RoleRepository) GetGroupById(ids []int64) (roles []RoleEntity, err error) {
+func (r *Repository) GetGroupById(ids []int64) (roles []Entity, err error) {
 	if len(ids) == 0 {
 		return nil, errors.New("role id can not be empty")
 	}
@@ -71,7 +63,7 @@ func (r *RoleRepository) GetGroupById(ids []int64) (roles []RoleEntity, err erro
 	return roles, nil
 }
 
-func (r *RoleRepository) Delete(id int64) (err error) {
+func (r *Repository) Delete(id int64) (err error) {
 	e, err := r.FindById(id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -86,7 +78,7 @@ func (r *RoleRepository) Delete(id int64) (err error) {
 	return nil
 }
 
-func (r *RoleRepository) DeleteGroup(ids []int64) error {
+func (r *Repository) DeleteGroup(ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}

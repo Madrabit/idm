@@ -13,7 +13,7 @@ const env = ".env"
 
 type Fixture struct {
 	db        *sqlx.DB
-	employees *employee.EmployeeRepository
+	employees *employee.Repository
 }
 
 func NewFixture() *Fixture {
@@ -25,7 +25,7 @@ func NewFixture() *Fixture {
 }
 
 func (f *Fixture) Employee(name string) (int64, error) {
-	entity := employee.EmployeeEntity{Name: name}
+	entity := employee.Entity{Name: name}
 	newId, err := f.employees.Add(entity)
 	if err != nil {
 		return -1, fmt.Errorf("fall while add employee %w", err)

@@ -11,7 +11,7 @@ import (
 
 type RoleFixture struct {
 	db   *sqlx.DB
-	repo *Role.RoleRepository
+	repo *Role.Repository
 }
 
 func NewRoleFixture() *RoleFixture {
@@ -23,7 +23,7 @@ func NewRoleFixture() *RoleFixture {
 }
 
 func (f *RoleFixture) Role(name string) (int64, error) {
-	entity := Role.RoleEntity{Name: name}
+	entity := Role.Entity{Name: name}
 	newId, err := f.repo.Add(entity)
 	if err != nil {
 		return -1, fmt.Errorf("fall while add role: %w", err)
