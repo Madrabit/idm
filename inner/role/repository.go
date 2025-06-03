@@ -75,13 +75,13 @@ func (r *RoleRepository) Delete(id int64) (err error) {
 	e, err := r.FindById(id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return fmt.Errorf("role do not exists %d", id)
+			return fmt.Errorf("role not found: %d", id)
 		}
 		return fmt.Errorf("db error %w", err)
 	}
 	_, err = r.db.Exec("DELETE FROM role WHERE id=$1", e.Id)
 	if err != nil {
-		return fmt.Errorf("failed to delete role: %v", err)
+		return fmt.Errorf("failed to delete role: %w", err)
 	}
 	return nil
 }

@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"fmt"
 	"github.com/jmoiron/sqlx"
 	"idm/inner/common"
 	"idm/inner/database"
@@ -21,13 +22,13 @@ func NewRoleFixture() *RoleFixture {
 	return &RoleFixture{db, repo}
 }
 
-func (f *RoleFixture) Role(name string) int64 {
+func (f *RoleFixture) Role(name string) (int64, error) {
 	entity := Role.RoleEntity{Name: name}
 	newId, err := f.repo.Add(entity)
 	if err != nil {
-		log.Fatal("fall while add role %w", err)
+		return -1, fmt.Errorf("fall while add role: %w", err)
 	}
-	return newId
+	return newId, nil
 }
 
 func (f *RoleFixture) Close() {
@@ -49,6 +50,6 @@ func initRoleSchema(db *sqlx.DB) {
 	);`
 	_, err := db.Exec(schema)
 	if err != nil {
-		log.Fatal("create temp table role %w", err)
+		log.Fatal("create temp table role: %w", err)
 	}
 }

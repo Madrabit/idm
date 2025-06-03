@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"fmt"
 	"github.com/jmoiron/sqlx"
 	"idm/inner/common"
 	"idm/inner/database"
@@ -23,13 +24,13 @@ func NewFixture() *Fixture {
 	return &Fixture{db: db, employees: repo}
 }
 
-func (f *Fixture) Employee(name string) int64 {
+func (f *Fixture) Employee(name string) (int64, error) {
 	entity := employee.EmployeeEntity{Name: name}
 	newId, err := f.employees.Add(entity)
 	if err != nil {
-		log.Fatal("fall while add employee %w", err)
+		return -1, fmt.Errorf("fall while add employee %w", err)
 	}
-	return newId
+	return newId, nil
 }
 
 func (f *Fixture) Close() {
