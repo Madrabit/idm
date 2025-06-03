@@ -1,0 +1,54 @@
+package tests
+
+import (
+	"github.com/jmoiron/sqlx"
+	"idm/inner/common"
+	"idm/inner/database"
+	Role "idm/inner/role"
+	"log"
+)
+
+type RoleFixture struct {
+	db   *sqlx.DB
+	repo *Role.RoleRepository
+}
+
+func NewRoleFixture() *RoleFixture {
+	cfg := common.GetConfig(env)
+	db := database.ConnectDbWithCfg(cfg)
+	repo := Role.NewRoleRepository(db)
+	initRoleSchema(db)
+	return &RoleFixture{db, repo}
+}
+
+func (f *RoleFixture) Role(name string) int64 {
+	entity := Role.RoleEntity{Name: name}
+	newId, err := f.repo.Add(entity)
+	if err != nil {
+		log.Fatal("fall while add role %w", err)
+	}
+	return newId
+}
+
+func (f *RoleFixture) Close() {
+	f.db.Close()
+}
+
+func (f *RoleFixture) ClearTable() {
+	f.db.MustExec("DELETE FROM role;")
+}
+
+func initRoleSchema(db *sqlx.DB) {
+	schema := `
+	CREATE TABLE IF NOT EXISTS role
+	(
+		id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+		name       TEXT        NOT NULL,
+		created_at timestamptz NOT NULL DEFAULT now(),
+		updated_at timestamptz          DEFAULT now()
+	);`
+	_, err := db.Exec(schema)
+	if err != nil {
+		log.Fatal("create temp table role %w", err)
+	}
+}

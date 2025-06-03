@@ -1,0 +1,56 @@
+package tests
+
+import (
+	"github.com/jmoiron/sqlx"
+	"idm/inner/common"
+	"idm/inner/database"
+	"idm/inner/employee"
+	"log"
+)
+
+const env = ".env"
+
+type Fixture struct {
+	db        *sqlx.DB
+	employees *employee.EmployeeRepository
+}
+
+func NewFixture() *Fixture {
+	cfg := common.GetConfig(env)
+	db := database.ConnectDbWithCfg(cfg)
+	repo := employee.NewEmployeeRepository(db)
+	initSchema(db)
+	return &Fixture{db: db, employees: repo}
+}
+
+func (f *Fixture) Employee(name string) int64 {
+	entity := employee.EmployeeEntity{Name: name}
+	newId, err := f.employees.Add(entity)
+	if err != nil {
+		log.Fatal("fall while add employee %w", err)
+	}
+	return newId
+}
+
+func (f *Fixture) Close() {
+	f.db.Close()
+}
+
+func (f *Fixture) ClearTable() {
+	f.db.MustExec("DELETE FROM employee;")
+}
+
+func initSchema(db *sqlx.DB) {
+	schema := `
+	CREATE TABLE IF NOT EXISTS employee
+	(
+		id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+		name       TEXT        NOT NULL,
+		created_at timestamptz NOT NULL DEFAULT now(),
+		updated_at timestamptz          DEFAULT now()
+	);`
+	_, err := db.Exec(schema)
+	if err != nil {
+		log.Fatal("create temp table employee %w", err)
+	}
+}

@@ -20,7 +20,7 @@ func TestDatabaseConnection(t *testing.T) {
 	})
 	t.Run("connection to db works", func(t *testing.T) {
 		t.Setenv("DB_DRIVER_NAME", "postgres")
-		t.Setenv("DB_DSN", "host=127.0.0.1 port=5434 user=admin password=postgres dbname=test_idm sslmode=disable")
+		t.Setenv("DB_DSN", "host=127.0.0.1 port=5433 user=admin password=postgres dbname=idm sslmode=disable")
 		config := common.GetConfig("")
 		defer func() {
 			if r := recover(); r != nil {
