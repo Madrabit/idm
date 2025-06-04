@@ -30,7 +30,7 @@ func (s *Service) FindById(id int64) (role Response, err error) {
 func (s *Service) GetAll() ([]Response, error) {
 	all, err := s.repo.GetAll()
 	if err != nil {
-		return []Response{}, fmt.Errorf("error getting all role: %w", err)
+		return []Response{}, fmt.Errorf("error getting all roles: %w", err)
 	}
 	var resp []Response
 	for _, entity := range all {
