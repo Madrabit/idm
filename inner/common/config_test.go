@@ -48,15 +48,16 @@ func eachEnvFile(t *testing.T, str string) string {
 	temp, err := os.CreateTemp(".", ".env")
 	assert.NoError(t, err)
 	t.Cleanup(func() {
-		os.Remove(temp.Name())
+		_ = os.Remove(temp.Name())
 	})
 	_, err = temp.WriteString(str)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err != nil {
-		return ""
-	}
-	temp.Close()
+	defer func() {
+		if err := temp.Close(); err != nil {
+			t.Errorf("failed to close temp file: %v", err)
+		}
+	}()
 	return temp.Name()
 }

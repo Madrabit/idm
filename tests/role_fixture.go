@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"fmt"
 	"github.com/jmoiron/sqlx"
 	"idm/inner/common"
 	"idm/inner/database"
@@ -10,28 +11,31 @@ import (
 
 type RoleFixture struct {
 	db   *sqlx.DB
-	repo *Role.RoleRepository
+	repo *Role.Repository
 }
 
 func NewRoleFixture() *RoleFixture {
 	cfg := common.GetConfig(env)
 	db := database.ConnectDbWithCfg(cfg)
-	repo := Role.NewRoleRepository(db)
+	repo := Role.NewRepository(db)
 	initRoleSchema(db)
 	return &RoleFixture{db, repo}
 }
 
-func (f *RoleFixture) Role(name string) int64 {
-	entity := Role.RoleEntity{Name: name}
+func (f *RoleFixture) Role(name string) (int64, error) {
+	entity := Role.Entity{Name: name}
 	newId, err := f.repo.Add(entity)
 	if err != nil {
-		log.Fatal("fall while add role %w", err)
+		return -1, fmt.Errorf("fall while add role: %w", err)
 	}
-	return newId
+	return newId, nil
 }
 
 func (f *RoleFixture) Close() {
-	f.db.Close()
+	err := f.db.Close()
+	if err != nil {
+		return
+	}
 }
 
 func (f *RoleFixture) ClearTable() {
@@ -49,6 +53,6 @@ func initRoleSchema(db *sqlx.DB) {
 	);`
 	_, err := db.Exec(schema)
 	if err != nil {
-		log.Fatal("create temp table role %w", err)
+		log.Fatal("create temp table role: %w", err)
 	}
 }
