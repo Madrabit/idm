@@ -9,14 +9,8 @@ type Entity struct {
 	UpdateAt time.Time `db:"updated_at"`
 }
 
-//nolint:gosimple
 func (e Entity) toResponse() Response {
-	return Response{
-		Id:       e.Id,
-		Name:     e.Name,
-		CreateAt: e.CreateAt,
-		UpdateAt: e.UpdateAt,
-	}
+	return Response(e)
 }
 
 type Response struct {
