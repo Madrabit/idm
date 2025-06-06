@@ -32,7 +32,10 @@ func (f *RoleFixture) Role(name string) (int64, error) {
 }
 
 func (f *RoleFixture) Close() {
-	f.db.Close()
+	err := f.db.Close()
+	if err != nil {
+		return
+	}
 }
 
 func (f *RoleFixture) ClearTable() {

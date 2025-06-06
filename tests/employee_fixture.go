@@ -34,7 +34,10 @@ func (f *Fixture) Employee(name string) (int64, error) {
 }
 
 func (f *Fixture) Close() {
-	f.db.Close()
+	err := f.db.Close()
+	if err != nil {
+		return
+	}
 }
 
 func (f *Fixture) ClearTable() {
