@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"fmt"
 	"github.com/jmoiron/sqlx"
 	"idm/inner/common"
 	"idm/inner/database"
@@ -12,7 +13,7 @@ const env = ".env"
 
 type Fixture struct {
 	db        *sqlx.DB
-	employees *employee.EmployeeRepository
+	employees *employee.Repository
 }
 
 func NewFixture() *Fixture {
@@ -23,17 +24,20 @@ func NewFixture() *Fixture {
 	return &Fixture{db: db, employees: repo}
 }
 
-func (f *Fixture) Employee(name string) int64 {
-	entity := employee.EmployeeEntity{Name: name}
+func (f *Fixture) Employee(name string) (int64, error) {
+	entity := employee.Entity{Name: name}
 	newId, err := f.employees.Add(entity)
 	if err != nil {
-		log.Fatal("fall while add employee %w", err)
+		return -1, fmt.Errorf("fall while add employee %w", err)
 	}
-	return newId
+	return newId, nil
 }
 
 func (f *Fixture) Close() {
-	f.db.Close()
+	err := f.db.Close()
+	if err != nil {
+		return
+	}
 }
 
 func (f *Fixture) ClearTable() {
