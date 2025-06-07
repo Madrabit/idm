@@ -19,7 +19,7 @@ type Fixture struct {
 func NewFixture() *Fixture {
 	cfg := common.GetConfig(env)
 	db := database.ConnectDbWithCfg(cfg)
-	repo := employee.NewEmployeeRepository(db)
+	repo := employee.NewRepository(db)
 	initSchema(db)
 	return &Fixture{db: db, employees: repo}
 }
@@ -34,7 +34,10 @@ func (f *Fixture) Employee(name string) (int64, error) {
 }
 
 func (f *Fixture) Close() {
-	f.db.Close()
+	err := f.db.Close()
+	if err != nil {
+		return
+	}
 }
 
 func (f *Fixture) ClearTable() {

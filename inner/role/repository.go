@@ -1,9 +1,6 @@
 package role
 
 import (
-	"database/sql"
-	"errors"
-	"fmt"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -11,7 +8,7 @@ type Repository struct {
 	db *sqlx.DB
 }
 
-func NewRoleRepository(db *sqlx.DB) *Repository {
+func NewRepository(db *sqlx.DB) *Repository {
 	return &Repository{db: db}
 }
 
@@ -26,7 +23,12 @@ func (r *Repository) GetAll() ([]Entity, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			return
+		}
+	}()
 	for rows.Next() {
 		var role Entity
 		if err = rows.StructScan(&role); err != nil {
@@ -48,9 +50,6 @@ func (r *Repository) Add(role Entity) (int64, error) {
 }
 
 func (r *Repository) GetGroupById(ids []int64) (roles []Entity, err error) {
-	if len(ids) == 0 {
-		return nil, errors.New("role id can not be empty")
-	}
 	q, args, err := sqlx.In("SELECT * FROM role WHERE id IN (?)", ids)
 	if err != nil {
 		return nil, err
@@ -64,24 +63,14 @@ func (r *Repository) GetGroupById(ids []int64) (roles []Entity, err error) {
 }
 
 func (r *Repository) Delete(id int64) (err error) {
-	e, err := r.FindById(id)
+	_, err = r.db.Exec("DELETE FROM role WHERE id=$1", id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return fmt.Errorf("role not found: %d", id)
-		}
-		return fmt.Errorf("db error %w", err)
-	}
-	_, err = r.db.Exec("DELETE FROM role WHERE id=$1", e.Id)
-	if err != nil {
-		return fmt.Errorf("failed to delete role: %w", err)
+		return err
 	}
 	return nil
 }
 
 func (r *Repository) DeleteGroup(ids []int64) error {
-	if len(ids) == 0 {
-		return nil
-	}
 	q, args, err := sqlx.In("DELETE FROM role WHERE id IN (?)", ids)
 	if err != nil {
 		return err

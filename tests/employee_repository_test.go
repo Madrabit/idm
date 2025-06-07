@@ -13,7 +13,7 @@ func TestEmployeeRepository(t *testing.T) {
 	t.Run("find employee by id", func(t *testing.T) {
 		repo := fx.employees
 		fx.ClearTable()
-		newEmpId := mustEmployee(t, fx, "name 1")
+		newEmpId := mustEmployee(t, fx, "Test name")
 		got, err := repo.FindById(newEmpId)
 		a.Nil(err)
 		a.NotEmpty(got)
