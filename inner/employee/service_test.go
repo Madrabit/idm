@@ -66,9 +66,10 @@ func TestFindById(t *testing.T) {
 		srv := NewService(repo)
 		entity := Entity{}
 		err := errors.New("database error")
-		want := fmt.Errorf("error finding employee with id 1: %w", err)
-		repo.On("FindById", int64(1)).Return(entity, err)
-		response, got := srv.FindById(1)
+		id := int64(1)
+		want := &NotFoundError{fmt.Sprintf("service repository: find by id: employee not found: id=%d", id)}
+		repo.On("FindById", id).Return(entity, err)
+		response, got := srv.FindById(id)
 		a.Empty(response)
 		a.NotNil(got)
 		a.Equal(want, got)
@@ -95,9 +96,8 @@ func TestAdd(t *testing.T) {
 		repo := new(MockRepo)
 		srv := NewService(repo)
 		entity := Entity{}
-		err := errors.New("database error")
-		want := fmt.Errorf("error adding employee: %w", err)
-		repo.On("Add", entity).Return(int64(-1), err)
+		want := &AddError{"employee service: add employee: error adding employee"}
+		repo.On("Add", entity).Return(int64(-1), want)
 		_, got := srv.Add(entity)
 		a.NotNil(got)
 		a.Equal(want, got)
@@ -133,9 +133,8 @@ func TestGetAll(t *testing.T) {
 		repo := new(MockRepo)
 		srv := NewService(repo)
 		entities := []Entity{}
-		err := errors.New("database error")
-		want := fmt.Errorf("error getting all employees: %w", err)
-		repo.On("GetAll").Return(entities, err)
+		want := &RetrieveError{Message: fmt.Sprintf("employee service: get all employees: error to retrieve all employees")}
+		repo.On("GetAll").Return(entities, want)
 		response, got := srv.GetAll()
 		a.Empty(response)
 		a.NotNil(got)
@@ -176,7 +175,7 @@ func TestGetGroupById(t *testing.T) {
 		entities := []Entity{}
 		err := errors.New("database error")
 		ids := []int64{1, 2}
-		want := fmt.Errorf("error getting employee with id %d: %w", ids, err)
+		want := &RetrieveError{fmt.Sprintf("employee service: get group by id: error getting employees with ids %v", ids)}
 		repo.On("GetGroupById", ids).Return(entities, err)
 		response, got := srv.GetGroupById(ids)
 		a.Empty(response)
@@ -200,7 +199,7 @@ func TestDelete(t *testing.T) {
 		srv := NewService(repo)
 		err := errors.New("database error")
 		id := int64(1)
-		want := fmt.Errorf("error deleting employee with id %d: %w", id, err)
+		want := &DeleteError{fmt.Sprintf("employee service: delete: error deleting employee with id %d", id)}
 		repo.On("Delete", id).Return(err)
 		got := srv.Delete(id)
 		a.NotNil(got)
@@ -224,7 +223,7 @@ func TestDeleteGroup(t *testing.T) {
 		srv := NewService(repo)
 		err := errors.New("database error")
 		ids := []int64{1, 2}
-		want := fmt.Errorf("error deleting group with id %d: %w", ids, err)
+		want := &DeleteError{fmt.Sprintf("employee service: delete group: error deleting group with id %v", ids)}
 		repo.On("DeleteGroup", ids).Return(err)
 		got := srv.DeleteGroup(ids)
 		a.NotNil(got)

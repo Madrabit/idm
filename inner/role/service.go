@@ -63,7 +63,7 @@ func (s *Service) FindById(id int64) (role Response, err error) {
 func (s *Service) GetAll() ([]Response, error) {
 	all, err := s.repo.GetAll()
 	if err != nil {
-		return []Response{}, &RetrieveError{Message: fmt.Sprintf("role service: get all roles: error to retrieve all roles %v", err)}
+		return []Response{}, &RetrieveError{Message: fmt.Sprintf("role service: get all roles: error to retrieve all roles")}
 	}
 	var resp []Response
 	for _, entity := range all {
@@ -75,7 +75,7 @@ func (s *Service) GetAll() ([]Response, error) {
 func (s *Service) Add(role Entity) (int64, error) {
 	id, err := s.repo.Add(role)
 	if err != nil {
-		return -1, &AddError{fmt.Sprintf("role service: add employee: error adding role: %v", err)}
+		return -1, &AddError{fmt.Sprintf("role service: add employee: error adding role")}
 	}
 	return id, nil
 }
@@ -83,7 +83,7 @@ func (s *Service) Add(role Entity) (int64, error) {
 func (s *Service) GetGroupById(ids []int64) ([]Response, error) {
 	roles, err := s.repo.GetGroupById(ids)
 	if err != nil {
-		return nil, &RetrieveError{fmt.Sprintf("role service: get group by id: error getting roles with ids %v: %v", ids, err)}
+		return nil, &RetrieveError{fmt.Sprintf("role service: get group by id: error getting roles with ids %v", ids)}
 	}
 	var resp []Response
 	for _, role := range roles {
@@ -95,7 +95,7 @@ func (s *Service) GetGroupById(ids []int64) ([]Response, error) {
 func (s *Service) Delete(id int64) error {
 	err := s.repo.Delete(id)
 	if err != nil {
-		return &DeleteError{fmt.Sprintf("role service: delete: error deleting role with id %d: %v", id, err)}
+		return &DeleteError{fmt.Sprintf("role service: delete: error deleting role with id %d", id)}
 	}
 	return nil
 }
@@ -103,7 +103,7 @@ func (s *Service) Delete(id int64) error {
 func (s *Service) DeleteGroup(ids []int64) error {
 	err := s.repo.DeleteGroup(ids)
 	if err != nil {
-		return &DeleteError{fmt.Sprintf("role service: delete group: error deleting group with id %v: %v", ids, err)}
+		return &DeleteError{fmt.Sprintf("role service: delete group: error deleting group with id %v", ids)}
 	}
 	return nil
 }

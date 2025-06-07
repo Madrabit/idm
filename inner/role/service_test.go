@@ -1,7 +1,6 @@
 package role
 
 import (
-	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -128,10 +127,11 @@ func TestFindById(t *testing.T) {
 		repo := new(MockRepo)
 		srv := NewService(repo)
 		entity := Entity{}
-		err := errors.New("database error")
-		want := fmt.Errorf("error finding role with id 1: %w", err)
-		repo.On("FindById", int64(1)).Return(entity, err)
-		response, got := srv.FindById(1)
+		id := int64(1)
+		want := &NotFoundError{fmt.Sprintf("service repository: find by id: "+
+			"role not found: id=%d", id)}
+		repo.On("FindById", id).Return(entity, want)
+		response, got := srv.FindById(id)
 		a.Empty(response)
 		a.NotNil(got)
 		a.Equal(want, got)
@@ -158,9 +158,8 @@ func TestAdd(t *testing.T) {
 		repo := new(MockRepo)
 		srv := NewService(repo)
 		entity := Entity{}
-		err := errors.New("database error")
-		want := fmt.Errorf("error adding role: %w", err)
-		repo.On("Add", entity).Return(int64(-1), err)
+		want := &AddError{fmt.Sprintf("role service: add employee: error adding role")}
+		repo.On("Add", entity).Return(int64(-1), want)
 		_, got := srv.Add(entity)
 		a.NotNil(got)
 		a.Equal(want, got)
@@ -196,9 +195,8 @@ func TestGetAll(t *testing.T) {
 		repo := new(MockRepo)
 		srv := NewService(repo)
 		entities := []Entity{}
-		err := errors.New("database error")
-		want := fmt.Errorf("error getting all roles: %w", err)
-		repo.On("GetAll").Return(entities, err)
+		want := &RetrieveError{Message: fmt.Sprintf("role service: get all roles: error to retrieve all roles")}
+		repo.On("GetAll").Return(entities, want)
 		response, got := srv.GetAll()
 		a.Empty(response)
 		a.NotNil(got)
@@ -237,10 +235,9 @@ func TestGetGroupById(t *testing.T) {
 		repo := new(MockRepo)
 		srv := NewService(repo)
 		entities := []Entity{}
-		err := errors.New("database error")
 		ids := []int64{1, 2}
-		want := fmt.Errorf("error getting role with id %d: %w", ids, err)
-		repo.On("GetGroupById", ids).Return(entities, err)
+		want := &RetrieveError{fmt.Sprintf("role service: get group by id: error getting roles with ids %v", ids)}
+		repo.On("GetGroupById", ids).Return(entities, want)
 		response, got := srv.GetGroupById(ids)
 		a.Empty(response)
 		a.NotNil(got)
@@ -261,10 +258,9 @@ func TestDelete(t *testing.T) {
 	t.Run("should return wrapped error", func(t *testing.T) {
 		repo := new(MockRepo)
 		srv := NewService(repo)
-		err := errors.New("database error")
 		id := int64(1)
-		want := fmt.Errorf("error deleting role with id %d: %w", id, err)
-		repo.On("Delete", id).Return(err)
+		want := &DeleteError{fmt.Sprintf("role service: delete: error deleting role with id %d", id)}
+		repo.On("Delete", id).Return(want)
 		got := srv.Delete(id)
 		a.NotNil(got)
 		a.Equal(want, got)
@@ -285,10 +281,9 @@ func TestDeleteGroup(t *testing.T) {
 	t.Run("should return wrapped error", func(t *testing.T) {
 		repo := new(MockRepo)
 		srv := NewService(repo)
-		err := errors.New("database error")
 		ids := []int64{1, 2}
-		want := fmt.Errorf("error deleting group with id %d: %w", ids, err)
-		repo.On("DeleteGroup", ids).Return(err)
+		want := &DeleteError{fmt.Sprintf("role service: delete group: error deleting group with id %v", ids)}
+		repo.On("DeleteGroup", ids).Return(want)
 		got := srv.DeleteGroup(ids)
 		a.NotNil(got)
 		a.Equal(want, got)
