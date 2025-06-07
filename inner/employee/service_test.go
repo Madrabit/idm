@@ -133,7 +133,7 @@ func TestGetAll(t *testing.T) {
 		repo := new(MockRepo)
 		srv := NewService(repo)
 		entities := []Entity{}
-		want := &RetrieveError{Message: fmt.Sprintf("employee service: get all employees: error to retrieve all employees")}
+		want := &RetrieveError{Message: "employee service: get all employees: error to retrieve all employees"}
 		repo.On("GetAll").Return(entities, want)
 		response, got := srv.GetAll()
 		a.Empty(response)

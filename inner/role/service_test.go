@@ -46,6 +46,8 @@ type Stub struct {
 	Entity
 	Err error
 }
+
+//goland:noinspection GoUnusedExportedType
 type StubRepo interface {
 	FindById(id int64) (Entity, error)
 	GetAll() ([]Entity, error)
@@ -55,11 +57,11 @@ type StubRepo interface {
 	DeleteGroup(ids []int64) error
 }
 
-func NewStubRepo() *Stub {
+func _() *Stub {
 	return &Stub{}
 }
 
-func (s *Stub) FindById(id int64) (Entity, error) {
+func (s *Stub) FindById(_ int64) (Entity, error) {
 	return s.Entity, s.Err
 }
 
@@ -68,22 +70,22 @@ func (s *Stub) GetAll() ([]Entity, error) {
 	panic("implement me")
 }
 
-func (s *Stub) Add(role Entity) (int64, error) {
+func (s *Stub) Add(_ Entity) (int64, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *Stub) GetGroupById(ids []int64) ([]Entity, error) {
+func (s *Stub) GetGroupById(_ []int64) ([]Entity, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *Stub) Delete(id int64) error {
+func (s *Stub) Delete(_ int64) error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *Stub) DeleteGroup(ids []int64) error {
+func (s *Stub) DeleteGroup(_ []int64) error {
 	//TODO implement me
 	panic("implement me")
 }
@@ -158,7 +160,7 @@ func TestAdd(t *testing.T) {
 		repo := new(MockRepo)
 		srv := NewService(repo)
 		entity := Entity{}
-		want := &AddError{fmt.Sprintf("role service: add employee: error adding role")}
+		want := &AddError{"role service: add employee: error adding role"}
 		repo.On("Add", entity).Return(int64(-1), want)
 		_, got := srv.Add(entity)
 		a.NotNil(got)
@@ -195,7 +197,7 @@ func TestGetAll(t *testing.T) {
 		repo := new(MockRepo)
 		srv := NewService(repo)
 		entities := []Entity{}
-		want := &RetrieveError{Message: fmt.Sprintf("role service: get all roles: error to retrieve all roles")}
+		want := &RetrieveError{Message: "role service: get all roles: error to retrieve all roles"}
 		repo.On("GetAll").Return(entities, want)
 		response, got := srv.GetAll()
 		a.Empty(response)

@@ -63,7 +63,7 @@ func (s *Service) FindById(id int64) (role Response, err error) {
 func (s *Service) GetAll() ([]Response, error) {
 	all, err := s.repo.GetAll()
 	if err != nil {
-		return []Response{}, &RetrieveError{Message: fmt.Sprintf("role service: get all roles: error to retrieve all roles")}
+		return []Response{}, &RetrieveError{Message: "role service: get all roles: error to retrieve all roles"}
 	}
 	var resp []Response
 	for _, entity := range all {
@@ -75,7 +75,7 @@ func (s *Service) GetAll() ([]Response, error) {
 func (s *Service) Add(role Entity) (int64, error) {
 	id, err := s.repo.Add(role)
 	if err != nil {
-		return -1, &AddError{fmt.Sprintf("role service: add employee: error adding role")}
+		return -1, &AddError{"role service: add employee: error adding role"}
 	}
 	return id, nil
 }
