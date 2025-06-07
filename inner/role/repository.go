@@ -1,4 +1,4 @@
-package Role
+package role
 
 import (
 	"github.com/jmoiron/sqlx"
