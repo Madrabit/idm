@@ -17,7 +17,7 @@ type RoleFixture struct {
 func NewRoleFixture() *RoleFixture {
 	cfg := common.GetConfig(env)
 	db := database.ConnectDbWithCfg(cfg)
-	repo := Role.NewRoleRepository(db)
+	repo := Role.NewRepository(db)
 	initRoleSchema(db)
 	return &RoleFixture{db, repo}
 }

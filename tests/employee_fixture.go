@@ -19,7 +19,7 @@ type Fixture struct {
 func NewFixture() *Fixture {
 	cfg := common.GetConfig(env)
 	db := database.ConnectDbWithCfg(cfg)
-	repo := employee.NewEmployeeRepository(db)
+	repo := employee.NewRepository(db)
 	initSchema(db)
 	return &Fixture{db: db, employees: repo}
 }

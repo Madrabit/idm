@@ -1,23 +1,15 @@
-package Role
+package role
 
 import (
 	"github.com/jmoiron/sqlx"
-	"time"
 )
 
 type Repository struct {
 	db *sqlx.DB
 }
 
-func NewRoleRepository(db *sqlx.DB) *Repository {
+func NewRepository(db *sqlx.DB) *Repository {
 	return &Repository{db: db}
-}
-
-type Entity struct {
-	Id       int64     `db:"id"`
-	Name     string    `db:"name"`
-	CreateAt time.Time `db:"created_at"`
-	UpdateAt time.Time `db:"updated_at"`
 }
 
 func (r *Repository) FindById(id int64) (role Entity, err error) {
