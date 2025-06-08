@@ -1,6 +1,10 @@
 package employee
 
-import "fmt"
+import (
+	"database/sql"
+	"errors"
+	"fmt"
+)
 
 type Service struct {
 	repo Repo
@@ -27,35 +31,14 @@ func (e *NotFoundError) Error() string {
 	return e.Message
 }
 
-type RetrieveError struct {
-	Message string
-}
-
-func (e *RetrieveError) Error() string {
-	return e.Message
-}
-
-type AddError struct {
-	Message string
-}
-
-func (e *AddError) Error() string {
-	return e.Message
-}
-
-type DeleteError struct {
-	Message string
-}
-
-func (e *DeleteError) Error() string {
-	return e.Message
-}
-
 func (s *Service) FindById(id int64) (role Response, err error) {
 	entity, err := s.repo.FindById(id)
 	if err != nil {
-		return Response{}, &NotFoundError{fmt.Sprintf("service repository: find by id: "+
-			"employee not found: id=%d", id)}
+		if errors.Is(err, sql.ErrNoRows) {
+			return Response{}, &NotFoundError{fmt.Sprintf("service repository: find by id: "+
+				"employee not found: id=%d", id)}
+		}
+		return Response{}, fmt.Errorf("service repository: find by id: error finding employee: id=%d", id)
 	}
 	return entity.toResponse(), nil
 }
@@ -63,7 +46,7 @@ func (s *Service) FindById(id int64) (role Response, err error) {
 func (s *Service) GetAll() ([]Response, error) {
 	all, err := s.repo.GetAll()
 	if err != nil {
-		return []Response{}, &RetrieveError{Message: "employee service: get all employees: error to retrieve all employees"}
+		return []Response{}, fmt.Errorf("employee service: get all employees: error to retrieve all employees")
 	}
 	var resp []Response
 	for _, entity := range all {
@@ -75,7 +58,7 @@ func (s *Service) GetAll() ([]Response, error) {
 func (s *Service) Add(role Entity) (int64, error) {
 	id, err := s.repo.Add(role)
 	if err != nil {
-		return -1, &AddError{"employee service: add employee: error adding employee"}
+		return -1, fmt.Errorf("employee service: add employee: error adding employee")
 	}
 	return id, nil
 }
@@ -83,7 +66,7 @@ func (s *Service) Add(role Entity) (int64, error) {
 func (s *Service) GetGroupById(ids []int64) ([]Response, error) {
 	employees, err := s.repo.GetGroupById(ids)
 	if err != nil {
-		return nil, &RetrieveError{fmt.Sprintf("employee service: get group by id: error getting employees with ids %v", ids)}
+		return nil, fmt.Errorf("employee service: get group by id: error getting employees with ids %v", ids)
 	}
 	var resp []Response
 	for _, emp := range employees {
@@ -95,7 +78,7 @@ func (s *Service) GetGroupById(ids []int64) ([]Response, error) {
 func (s *Service) Delete(id int64) error {
 	err := s.repo.Delete(id)
 	if err != nil {
-		return &DeleteError{fmt.Sprintf("employee service: delete: error deleting employee with id %d", id)}
+		return fmt.Errorf("employee service: delete: error deleting employee with id %d", id)
 	}
 	return nil
 }
@@ -106,7 +89,7 @@ func (s *Service) DeleteGroup(ids []int64) error {
 	}
 	err := s.repo.DeleteGroup(ids)
 	if err != nil {
-		return &DeleteError{fmt.Sprintf("employee service: delete group: error deleting group with id %v", ids)}
+		return fmt.Errorf("employee service: delete group: error deleting group with id %v", ids)
 	}
 	return nil
 }

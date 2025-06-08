@@ -160,7 +160,7 @@ func TestAdd(t *testing.T) {
 		repo := new(MockRepo)
 		srv := NewService(repo)
 		entity := Entity{}
-		want := &AddError{"role service: add employee: error adding role"}
+		want := fmt.Errorf("role service: add employee: error adding role")
 		repo.On("Add", entity).Return(int64(-1), want)
 		_, got := srv.Add(entity)
 		a.NotNil(got)
@@ -197,7 +197,7 @@ func TestGetAll(t *testing.T) {
 		repo := new(MockRepo)
 		srv := NewService(repo)
 		entities := []Entity{}
-		want := &RetrieveError{Message: "role service: get all roles: error to retrieve all roles"}
+		want := fmt.Errorf("role service: get all roles: error to retrieve all roles")
 		repo.On("GetAll").Return(entities, want)
 		response, got := srv.GetAll()
 		a.Empty(response)
@@ -238,7 +238,7 @@ func TestGetGroupById(t *testing.T) {
 		srv := NewService(repo)
 		entities := []Entity{}
 		ids := []int64{1, 2}
-		want := &RetrieveError{fmt.Sprintf("role service: get group by id: error getting roles with ids %v", ids)}
+		want := fmt.Errorf("role service: get group by id: error getting roles with ids %v", ids)
 		repo.On("GetGroupById", ids).Return(entities, want)
 		response, got := srv.GetGroupById(ids)
 		a.Empty(response)
@@ -261,7 +261,7 @@ func TestDelete(t *testing.T) {
 		repo := new(MockRepo)
 		srv := NewService(repo)
 		id := int64(1)
-		want := &DeleteError{fmt.Sprintf("role service: delete: error deleting role with id %d", id)}
+		want := fmt.Errorf("role service: delete: error deleting role with id %d", id)
 		repo.On("Delete", id).Return(want)
 		got := srv.Delete(id)
 		a.NotNil(got)
@@ -284,7 +284,7 @@ func TestDeleteGroup(t *testing.T) {
 		repo := new(MockRepo)
 		srv := NewService(repo)
 		ids := []int64{1, 2}
-		want := &DeleteError{fmt.Sprintf("role service: delete group: error deleting group with id %v", ids)}
+		want := fmt.Errorf("role service: delete group: error deleting group with id %v", ids)
 		repo.On("DeleteGroup", ids).Return(want)
 		got := srv.DeleteGroup(ids)
 		a.NotNil(got)
