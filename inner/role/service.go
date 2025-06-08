@@ -36,9 +36,9 @@ func (s *Service) FindById(id int64) (role Response, err error) {
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return Response{}, &NotFoundError{fmt.Sprintf("service repository: find by id: "+
-				"employee not found: id=%d", id)}
+				"role not found: id=%d", id)}
 		}
-		return Response{}, fmt.Errorf("service repository: find by id: error finding employee: id=%d", id)
+		return Response{}, fmt.Errorf("service repository: find by id: error finding role: id=%d", id)
 	}
 	return entity.toResponse(), nil
 }

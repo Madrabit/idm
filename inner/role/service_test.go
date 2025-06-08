@@ -1,6 +1,8 @@
 package role
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -132,8 +134,10 @@ func TestFindById(t *testing.T) {
 		id := int64(1)
 		want := &NotFoundError{fmt.Sprintf("service repository: find by id: "+
 			"role not found: id=%d", id)}
-		repo.On("FindById", id).Return(entity, want)
+		repo.On("FindById", id).Return(entity, sql.ErrNoRows)
 		response, got := srv.FindById(id)
+		var notFoundErr *NotFoundError
+		a.True(errors.As(got, &notFoundErr))
 		a.Empty(response)
 		a.NotNil(got)
 		a.Equal(want, got)

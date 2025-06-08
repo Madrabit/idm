@@ -1,6 +1,7 @@
 package employee
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
@@ -65,11 +66,12 @@ func TestFindById(t *testing.T) {
 		repo := new(MockRepo)
 		srv := NewService(repo)
 		entity := Entity{}
-		err := errors.New("database error")
 		id := int64(1)
 		want := &NotFoundError{fmt.Sprintf("service repository: find by id: employee not found: id=%d", id)}
-		repo.On("FindById", id).Return(entity, err)
+		repo.On("FindById", id).Return(entity, sql.ErrNoRows)
 		response, got := srv.FindById(id)
+		var notFoundErr *NotFoundError
+		a.True(errors.As(got, &notFoundErr))
 		a.Empty(response)
 		a.NotNil(got)
 		a.Equal(want, got)
