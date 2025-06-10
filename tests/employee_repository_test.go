@@ -105,11 +105,10 @@ func TestEmployeeRepository(t *testing.T) {
 			UpdateAt: time.Now(),
 		}
 		isExist, err := repo.FindByNameTx(tx, entity.Name)
+		a.NoError(err)
 		a.False(isExist, "should be now employee before add")
 		got, err := repo.Add(tx, entity)
-		if err != nil {
-			return
-		}
+		a.NoError(err)
 		a.NoError(err)
 		a.NotEmpty(got)
 		found, err := repo.FindByNameTx(tx, entity.Name)
