@@ -99,10 +99,10 @@ func TestEmployeeRepository(t *testing.T) {
 			}
 		}(tx)
 		entity := employee.Entity{
-			1,
-			"name1",
-			time.Now(),
-			time.Now(),
+			Id:       1,
+			Name:     "name1",
+			CreateAt: time.Now(),
+			UpdateAt: time.Now(),
 		}
 		isExist, err := repo.FindByNameTx(tx, entity.Name)
 		a.False(isExist, "should be now employee before add")

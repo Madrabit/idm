@@ -14,7 +14,6 @@ import (
 
 type MockRepo struct {
 	mock.Mock
-	db *sql.DB
 }
 
 func (m *MockRepo) FindById(id int64) (Entity, error) {
@@ -79,7 +78,7 @@ func TestFindById(t *testing.T) {
 		srv := NewService(repo)
 		entity := Entity{}
 		id := int64(1)
-		want := &NotFoundError{fmt.Sprintf("service repository: find by id: employee not found: id=%d", id)}
+		want := &NotFoundError{fmt.Sprintf("employee service: find by id: employee not found: id=%d", id)}
 		repo.On("FindById", id).Return(entity, sql.ErrNoRows)
 		response, got := srv.FindById(id)
 		var notFoundErr *NotFoundError
@@ -113,7 +112,7 @@ func TestAdd(t *testing.T) {
 		defer func() {
 			err := db.Close()
 			if err != nil {
-
+				fmt.Errorf("error close database: %v", err)
 			}
 		}()
 		sqlxDB := sqlx.NewDb(db, "sqlmock")
@@ -153,7 +152,7 @@ func TestAdd(t *testing.T) {
 		defer func() {
 			err := db.Close()
 			if err != nil {
-
+				fmt.Errorf("error close database: %v", err)
 			}
 		}()
 		sqlxDB := sqlx.NewDb(db, "sqlmock")
@@ -190,7 +189,7 @@ func TestAdd(t *testing.T) {
 		defer func() {
 			err := db.Close()
 			if err != nil {
-
+				fmt.Errorf("error close database: %v", err)
 			}
 		}()
 		sqlxDB := sqlx.NewDb(db, "sqlmock")
@@ -229,7 +228,7 @@ func TestAdd(t *testing.T) {
 		defer func() {
 			err := db.Close()
 			if err != nil {
-
+				fmt.Errorf("error close database: %v", err)
 			}
 		}()
 		sqlxDB := sqlx.NewDb(db, "sqlmock")
