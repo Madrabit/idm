@@ -5,6 +5,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"idm/inner/employee"
+	"log"
 	"testing"
 	"time"
 )
@@ -95,7 +96,7 @@ func TestEmployeeRepository(t *testing.T) {
 		defer func(tx *sqlx.Tx) {
 			err := tx.Rollback()
 			if err != nil {
-
+				log.Fatal("rollback error")
 			}
 		}(tx)
 		entity := employee.Entity{
