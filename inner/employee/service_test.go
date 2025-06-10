@@ -118,12 +118,12 @@ func TestAdd(t *testing.T) {
 		sqlxDB := sqlx.NewDb(db, "sqlmock")
 		mockDB.ExpectBegin()
 		tx, err := sqlxDB.Beginx()
+		mockDB.ExpectClose()
 		if err != nil {
 			t.Fatal(err)
 		}
 		repo := new(MockRepo)
 		srv := NewService(repo)
-		mockDB.ExpectBegin()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -142,6 +142,7 @@ func TestAdd(t *testing.T) {
 		a.ErrorContains(got, want.Error())
 		a.True(repo.AssertNumberOfCalls(t, "FindByNameTx", 1))
 		a.True(repo.AssertNumberOfCalls(t, "BeginTransaction", 1))
+
 	})
 	t.Run("should return employee exists", func(t *testing.T) {
 		a := assert.New(t)
@@ -157,6 +158,7 @@ func TestAdd(t *testing.T) {
 		}()
 		sqlxDB := sqlx.NewDb(db, "sqlmock")
 		mockDB.ExpectBegin()
+		mockDB.ExpectClose()
 		tx, err := sqlxDB.Beginx()
 		if err != nil {
 			t.Fatal(err)
@@ -195,6 +197,7 @@ func TestAdd(t *testing.T) {
 		sqlxDB := sqlx.NewDb(db, "sqlmock")
 		mockDB.ExpectBegin()
 		mockDB.ExpectRollback()
+		mockDB.ExpectClose()
 		tx, err := sqlxDB.Beginx()
 		if err != nil {
 			t.Fatal(err)
@@ -234,6 +237,7 @@ func TestAdd(t *testing.T) {
 		sqlxDB := sqlx.NewDb(db, "sqlmock")
 		mockDB.ExpectBegin()
 		mockDB.ExpectCommit()
+		mockDB.ExpectClose()
 		tx, err := sqlxDB.Beginx()
 		if err != nil {
 			t.Fatal(err)
