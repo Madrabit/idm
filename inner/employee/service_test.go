@@ -112,7 +112,7 @@ func TestAdd(t *testing.T) {
 		defer func() {
 			err := db.Close()
 			if err != nil {
-				fmt.Errorf("error close database: %v", err)
+				t.Fatal("error close database")
 			}
 		}()
 		sqlxDB := sqlx.NewDb(db, "sqlmock")
@@ -152,7 +152,7 @@ func TestAdd(t *testing.T) {
 		defer func() {
 			err := db.Close()
 			if err != nil {
-				fmt.Errorf("error close database: %v", err)
+				t.Fatal("error close database")
 			}
 		}()
 		sqlxDB := sqlx.NewDb(db, "sqlmock")
@@ -189,7 +189,7 @@ func TestAdd(t *testing.T) {
 		defer func() {
 			err := db.Close()
 			if err != nil {
-				fmt.Errorf("error close database: %v", err)
+				t.Fatal("error close database")
 			}
 		}()
 		sqlxDB := sqlx.NewDb(db, "sqlmock")
@@ -228,7 +228,7 @@ func TestAdd(t *testing.T) {
 		defer func() {
 			err := db.Close()
 			if err != nil {
-				fmt.Errorf("error close database: %v", err)
+				t.Fatal("error close database")
 			}
 		}()
 		sqlxDB := sqlx.NewDb(db, "sqlmock")
