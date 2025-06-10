@@ -1,9 +1,12 @@
 package tests
 
 import (
+	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"idm/inner/employee"
 	"testing"
+	"time"
 )
 
 func TestEmployeeRepository(t *testing.T) {
@@ -83,6 +86,35 @@ func TestEmployeeRepository(t *testing.T) {
 		got, err := repo.GetGroupById(ids)
 		a.NoError(err)
 		a.Len(got, 0)
+	})
+	t.Run("find employee and insert in one tx", func(t *testing.T) {
+		repo := fx.employees
+		fx.ClearTable()
+		tx, err := repo.BeginTransaction()
+		a.NoError(err)
+		defer func(tx *sqlx.Tx) {
+			err := tx.Rollback()
+			if err != nil {
+
+			}
+		}(tx)
+		entity := employee.Entity{
+			1,
+			"name1",
+			time.Now(),
+			time.Now(),
+		}
+		isExist, err := repo.FindByNameTx(tx, entity.Name)
+		a.False(isExist, "should be now employee before add")
+		got, err := repo.Add(tx, entity)
+		if err != nil {
+			return
+		}
+		a.NoError(err)
+		a.NotEmpty(got)
+		found, err := repo.FindByNameTx(tx, entity.Name)
+		a.NoError(err)
+		a.True(found)
 	})
 }
 func mustEmployee(t *testing.T, f *Fixture, name string) int64 {
