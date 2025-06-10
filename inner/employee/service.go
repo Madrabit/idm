@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/jmoiron/sqlx"
 )
 
 type Service struct {
@@ -12,11 +13,13 @@ type Service struct {
 
 type Repo interface {
 	FindById(id int64) (Entity, error)
+	FindByNameTx(tx *sqlx.Tx, name string) (bool, error)
 	GetAll() ([]Entity, error)
-	Add(employee Entity) (int64, error)
+	Add(tx *sqlx.Tx, employee Entity) (int64, error)
 	GetGroupById(ids []int64) ([]Entity, error)
 	Delete(id int64) error
 	DeleteGroup(ids []int64) error
+	BeginTransaction() (*sqlx.Tx, error)
 }
 
 func NewService(repo Repo) *Service {
@@ -35,10 +38,10 @@ func (s *Service) FindById(id int64) (role Response, err error) {
 	entity, err := s.repo.FindById(id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return Response{}, &NotFoundError{fmt.Sprintf("service repository: find by id: "+
+			return Response{}, &NotFoundError{fmt.Sprintf("employee service: find by id: "+
 				"employee not found: id=%d", id)}
 		}
-		return Response{}, fmt.Errorf("service repository: find by id: error finding employee: id=%d", id)
+		return Response{}, fmt.Errorf("employee service: find by id: error finding employee: id=%d", id)
 	}
 	return entity.toResponse(), nil
 }
@@ -55,8 +58,35 @@ func (s *Service) GetAll() ([]Response, error) {
 	return resp, nil
 }
 
-func (s *Service) Add(role Entity) (int64, error) {
-	id, err := s.repo.Add(role)
+func (s *Service) Add(employee Entity) (id int64, err error) {
+	tx, err := s.repo.BeginTransaction()
+	if err != nil {
+		return 0, fmt.Errorf("employee service: add employee: error starting transaction")
+	}
+	defer func() {
+		if p := recover(); p != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("employee service: add employee: panic add employee: %v", p)
+			return
+		}
+		if err != nil {
+			if rbErr := tx.Rollback(); rbErr != nil {
+				err = fmt.Errorf("rollback failed: original error: %w", err)
+			}
+			return
+		}
+		if commitErr := tx.Commit(); commitErr != nil {
+			err = fmt.Errorf("employee service: add employee: committing transaction failed: %w", commitErr)
+		}
+	}()
+	isExists, err := s.repo.FindByNameTx(tx, employee.Name)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return 0, fmt.Errorf("employee service: add employee: error checking exists employee")
+	}
+	if isExists {
+		return employee.Id, nil
+	}
+	id, err = s.repo.Add(tx, employee)
 	if err != nil {
 		return -1, fmt.Errorf("employee service: add employee: error adding employee")
 	}

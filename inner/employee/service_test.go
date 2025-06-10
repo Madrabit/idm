@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"testing"
@@ -24,8 +26,8 @@ func (m *MockRepo) GetAll() ([]Entity, error) {
 	return args.Get(0).([]Entity), args.Error(1)
 }
 
-func (m *MockRepo) Add(employee Entity) (int64, error) {
-	args := m.Called(employee)
+func (m *MockRepo) Add(tx *sqlx.Tx, employee Entity) (int64, error) {
+	args := m.Called(tx, employee)
 	return args.Get(0).(int64), args.Error(1)
 }
 
@@ -38,10 +40,19 @@ func (m *MockRepo) Delete(id int64) error {
 	args := m.Called(id)
 	return args.Error(0)
 }
-
 func (m *MockRepo) DeleteGroup(ids []int64) error {
 	args := m.Called(ids)
 	return args.Error(0)
+}
+
+func (m *MockRepo) BeginTransaction() (tx *sqlx.Tx, err error) {
+	args := m.Called()
+	return args.Get(0).(*sqlx.Tx), args.Error(1)
+}
+
+func (m *MockRepo) FindByNameTx(tx *sqlx.Tx, name string) (bool, error) {
+	args := m.Called(tx, name)
+	return args.Get(0).(bool), args.Error(1)
 }
 
 func TestFindById(t *testing.T) {
@@ -67,7 +78,7 @@ func TestFindById(t *testing.T) {
 		srv := NewService(repo)
 		entity := Entity{}
 		id := int64(1)
-		want := &NotFoundError{fmt.Sprintf("service repository: find by id: employee not found: id=%d", id)}
+		want := &NotFoundError{fmt.Sprintf("employee service: find by id: employee not found: id=%d", id)}
 		repo.On("FindById", id).Return(entity, sql.ErrNoRows)
 		response, got := srv.FindById(id)
 		var notFoundErr *NotFoundError
@@ -81,27 +92,170 @@ func TestFindById(t *testing.T) {
 
 func TestAdd(t *testing.T) {
 	a := assert.New(t)
-	t.Run("should return added employee's id", func(t *testing.T) {
+	t.Run("should return wrapped error while begin transaction", func(t *testing.T) {
+		a := assert.New(t)
+		db, m, err := sqlmock.New()
+		a.NoError(err)
+		m.ExpectBegin().WillReturnError(fmt.Errorf("error beginning transaction"))
+		sqlxDB := sqlx.NewDb(db, "postgres")
+		repo := NewRepository(sqlxDB)
+		_, err = repo.BeginTransaction()
+		a.Error(err)
+		a.Equal("error beginning transaction", err.Error())
+	})
+	t.Run("should return error finding employee by name", func(t *testing.T) {
+		a := assert.New(t)
+		db, mockDB, err := sqlmock.New()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() {
+			err := db.Close()
+			if err != nil {
+				t.Fatal("error close database")
+			}
+		}()
+		sqlxDB := sqlx.NewDb(db, "sqlmock")
+		mockDB.ExpectBegin()
+		tx, err := sqlxDB.Beginx()
+		mockDB.ExpectClose()
+		if err != nil {
+			t.Fatal(err)
+		}
 		repo := new(MockRepo)
 		srv := NewService(repo)
+		if err != nil {
+			t.Fatal(err)
+		}
+		entity := Entity{
+			Id:       1,
+			Name:     "John",
+			CreateAt: time.Now(),
+			UpdateAt: time.Now(),
+		}
+		repo.On("BeginTransaction").Return(tx, nil)
+		want := fmt.Errorf("rollback failed: original error: employee service: add employee: error checking exists employee")
+		repo.On("FindByNameTx", tx, entity.Name).Return(false, want)
+		response, got := srv.Add(entity)
+		a.Empty(response)
+		a.NotNil(got)
+		a.ErrorContains(got, want.Error())
+		a.True(repo.AssertNumberOfCalls(t, "FindByNameTx", 1))
+		a.True(repo.AssertNumberOfCalls(t, "BeginTransaction", 1))
+
+	})
+	t.Run("should return employee exists", func(t *testing.T) {
+		a := assert.New(t)
+		db, mockDB, err := sqlmock.New()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() {
+			err := db.Close()
+			if err != nil {
+				t.Fatal("error close database")
+			}
+		}()
+		sqlxDB := sqlx.NewDb(db, "sqlmock")
+		mockDB.ExpectBegin()
+		mockDB.ExpectClose()
+		tx, err := sqlxDB.Beginx()
+		if err != nil {
+			t.Fatal(err)
+		}
+		repo := new(MockRepo)
+		srv := NewService(repo)
+		if err != nil {
+			t.Fatal(err)
+		}
+		entity := Entity{
+			Id:       1,
+			Name:     "John",
+			CreateAt: time.Now(),
+			UpdateAt: time.Now(),
+		}
+		repo.On("BeginTransaction").Return(tx, nil)
+		repo.On("FindByNameTx", tx, entity.Name).Return(true, nil)
+		id, err := srv.Add(entity)
+		assert.Error(t, err)
+		assert.Equal(t, entity.Id, id)
+		a.True(repo.AssertNumberOfCalls(t, "FindByNameTx", 1))
+		a.True(repo.AssertNumberOfCalls(t, "BeginTransaction", 1))
+	})
+	t.Run("employee not exists but fall while add", func(t *testing.T) {
+		a := assert.New(t)
+		db, mockDB, err := sqlmock.New()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() {
+			err := db.Close()
+			if err != nil {
+				t.Fatal("error close database")
+			}
+		}()
+		sqlxDB := sqlx.NewDb(db, "sqlmock")
+		mockDB.ExpectBegin()
+		mockDB.ExpectRollback()
+		mockDB.ExpectClose()
+		tx, err := sqlxDB.Beginx()
+		if err != nil {
+			t.Fatal(err)
+		}
+		repo := new(MockRepo)
+		srv := NewService(repo)
+		if err != nil {
+			t.Fatal(err)
+		}
+		entity := Entity{
+			Id:       1,
+			Name:     "John",
+			CreateAt: time.Now(),
+			UpdateAt: time.Now(),
+		}
+		want := fmt.Errorf("employee service: add employee: error adding employee")
+		repo.On("BeginTransaction").Return(tx, nil)
+		repo.On("FindByNameTx", mock.Anything, entity.Name).Return(false, nil)
+		repo.On("Add", mock.Anything, entity).Return(int64(-1), want)
+		id, err := srv.Add(entity)
+		a.Error(err)
+		a.Contains(err.Error(), want.Error())
+		a.Equal(int64(-1), id)
+		a.True(repo.AssertNumberOfCalls(t, "Add", 1))
+	})
+	t.Run("should return added employee's id", func(t *testing.T) {
+		db, mockDB, err := sqlmock.New()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() {
+			err := db.Close()
+			if err != nil {
+				t.Fatal("error close database")
+			}
+		}()
+		sqlxDB := sqlx.NewDb(db, "sqlmock")
+		mockDB.ExpectBegin()
+		mockDB.ExpectCommit()
+		mockDB.ExpectClose()
+		tx, err := sqlxDB.Beginx()
+		if err != nil {
+			t.Fatal(err)
+		}
+		repo := new(MockRepo)
+		srv := NewService(repo)
+		if err != nil {
+			t.Fatal(err)
+		}
 		entity := Entity{
 			Id: 1, Name: "John", CreateAt: time.Now(), UpdateAt: time.Now(),
 		}
 		want := int64(1)
-		repo.On("Add", entity).Return(want, nil)
+		repo.On("BeginTransaction").Return(tx, nil)
+		repo.On("FindByNameTx", mock.Anything, entity.Name).Return(false, nil)
+		repo.On("Add", mock.Anything, entity).Return(want, nil)
 		got, err := srv.Add(entity)
 		a.NoError(err)
-		a.Equal(want, got)
-		a.True(repo.AssertNumberOfCalls(t, "Add", 1))
-	})
-	t.Run("should return wrapped error", func(t *testing.T) {
-		repo := new(MockRepo)
-		srv := NewService(repo)
-		entity := Entity{}
-		want := fmt.Errorf("employee service: add employee: error adding employee")
-		repo.On("Add", entity).Return(int64(-1), want)
-		_, got := srv.Add(entity)
-		a.NotNil(got)
 		a.Equal(want, got)
 		a.True(repo.AssertNumberOfCalls(t, "Add", 1))
 	})

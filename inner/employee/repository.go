@@ -12,9 +12,22 @@ func NewRepository(db *sqlx.DB) *Repository {
 	return &Repository{db: db}
 }
 
+func (r *Repository) BeginTransaction() (tx *sqlx.Tx, err error) {
+	return r.db.Beginx()
+}
+
 func (r *Repository) FindById(id int64) (employee Entity, err error) {
 	err = r.db.Get(&employee, "SELECT * FROM employee WHERE id=$1", id)
 	return employee, err
+}
+
+func (r *Repository) FindByNameTx(tx *sqlx.Tx, name string) (isExists bool, err error) {
+	err = tx.Get(
+		&isExists,
+		"select exists(select 1 from employee where name = $1)",
+		name,
+	)
+	return isExists, err
 }
 
 func (r *Repository) GetAll() ([]Entity, error) {
@@ -39,9 +52,9 @@ func (r *Repository) GetAll() ([]Entity, error) {
 	return employees, nil
 }
 
-func (r *Repository) Add(employee Entity) (int64, error) {
+func (r *Repository) Add(tx *sqlx.Tx, employee Entity) (int64, error) {
 	var id int64
-	err := r.db.QueryRow("INSERT INTO employee (name) VALUES ($1) RETURNING id",
+	err := tx.QueryRow("INSERT INTO employee (name) VALUES ($1) RETURNING id",
 		employee.Name).Scan(&id)
 	if err != nil {
 		return -1, err

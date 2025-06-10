@@ -1,7 +1,7 @@
 package tests
 
 import (
-	"fmt"
+	"context"
 	"github.com/jmoiron/sqlx"
 	"idm/inner/common"
 	"idm/inner/database"
@@ -25,12 +25,19 @@ func NewFixture() *Fixture {
 }
 
 func (f *Fixture) Employee(name string) (int64, error) {
-	entity := employee.Entity{Name: name}
-	newId, err := f.employees.Add(entity)
+	tx, err := f.db.BeginTxx(context.Background(), nil)
 	if err != nil {
-		return -1, fmt.Errorf("fall while add employee %w", err)
+		return -1, err
 	}
-	return newId, nil
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		} else {
+			_ = tx.Commit()
+		}
+	}()
+	entity := employee.Entity{Name: name}
+	return f.employees.Add(tx, entity)
 }
 
 func (f *Fixture) Close() {
