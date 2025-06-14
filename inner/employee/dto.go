@@ -34,11 +34,3 @@ type IdRequest struct {
 type IdsRequest struct {
 	Ids []int64 `param:"ids" validate:"min=1,dive,gt=0"`
 }
-
-func (req *IdsRequest) toEntities() []Entity {
-	entities := make([]Entity, len(req.Ids))
-	for i, id := range req.Ids {
-		entities[i] = Entity{Id: id}
-	}
-	return entities
-}

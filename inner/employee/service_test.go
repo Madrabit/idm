@@ -180,7 +180,7 @@ func TestAdd(t *testing.T) {
 		repo.On("FindByNameTx", tx, entity.Name).Return(true, nil)
 		id, err := srv.Add(NameRequest{entity.Name})
 		assert.Error(t, err)
-		assert.Equal(t, entity.Id, id)
+		assert.Equal(t, int64(0), id)
 		a.True(repo.AssertNumberOfCalls(t, "FindByNameTx", 1))
 		a.True(repo.AssertNumberOfCalls(t, "BeginTransaction", 1))
 	})
@@ -218,7 +218,9 @@ func TestAdd(t *testing.T) {
 		want := fmt.Errorf("employee service: add employee: error adding employee")
 		repo.On("BeginTransaction").Return(tx, nil)
 		repo.On("FindByNameTx", mock.Anything, entity.Name).Return(false, nil)
-		repo.On("Add", mock.Anything, entity).Return(int64(-1), want)
+		repo.On("Add", mock.Anything, mock.MatchedBy(func(e Entity) bool {
+			return e.Name == "John"
+		})).Return(int64(-1), want)
 		id, err := srv.Add(NameRequest{entity.Name})
 		a.Error(err)
 		a.Contains(err.Error(), want.Error())
@@ -255,7 +257,9 @@ func TestAdd(t *testing.T) {
 		want := int64(1)
 		repo.On("BeginTransaction").Return(tx, nil)
 		repo.On("FindByNameTx", mock.Anything, entity.Name).Return(false, nil)
-		repo.On("Add", mock.Anything, entity).Return(want, nil)
+		repo.On("Add", mock.Anything, mock.MatchedBy(func(e Entity) bool {
+			return e.Name == "John"
+		})).Return(want, nil)
 		got, err := srv.Add(NameRequest{entity.Name})
 		a.NoError(err)
 		a.Equal(want, got)
