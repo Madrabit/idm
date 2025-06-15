@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"idm/inner/common"
+	"idm/inner/validator"
 	"testing"
 	"time"
 )
@@ -105,15 +107,15 @@ func TestFindById(t *testing.T) {
 			entity,
 			nil,
 		}
-		srv := NewService(repo)
+		srv := NewService(repo, validator.New())
 		want := entity.toResponse()
-		got, err := srv.FindById(1)
+		got, err := srv.FindById(IdRequest{1})
 		a.NoError(err)
 		a.Equal(want, got)
 	})
 	t.Run("should return found role", func(t *testing.T) {
 		repo := new(MockRepo)
-		srv := NewService(repo)
+		srv := NewService(repo, validator.New())
 		entity := Entity{
 			Id:       1,
 			Name:     "Admin",
@@ -122,21 +124,21 @@ func TestFindById(t *testing.T) {
 		}
 		want := entity.toResponse()
 		repo.On("FindById", int64(1)).Return(entity, nil)
-		got, err := srv.FindById(1)
+		got, err := srv.FindById(IdRequest{1})
 		a.NoError(err)
 		a.Equal(want, got)
 		a.True(repo.AssertNumberOfCalls(t, "FindById", 1))
 	})
 	t.Run("should return wrapped error", func(t *testing.T) {
 		repo := new(MockRepo)
-		srv := NewService(repo)
+		srv := NewService(repo, validator.New())
 		entity := Entity{}
 		id := int64(1)
-		want := &NotFoundError{fmt.Sprintf("service repository: find by id: "+
+		want := &common.NotFoundError{Massage: fmt.Sprintf("service repository: find by id: "+
 			"role not found: id=%d", id)}
 		repo.On("FindById", id).Return(entity, sql.ErrNoRows)
-		response, got := srv.FindById(id)
-		var notFoundErr *NotFoundError
+		response, got := srv.FindById(IdRequest{1})
+		var notFoundErr *common.NotFoundError
 		a.True(errors.As(got, &notFoundErr))
 		a.Empty(response)
 		a.NotNil(got)
@@ -149,34 +151,34 @@ func TestAdd(t *testing.T) {
 	a := assert.New(t)
 	t.Run("should return added role's id", func(t *testing.T) {
 		repo := new(MockRepo)
-		srv := NewService(repo)
+		srv := NewService(repo, validator.New())
 		entity := Entity{
 			Id: 1, Name: "Admin", CreateAt: time.Now(), UpdateAt: time.Now(),
 		}
 		want := int64(1)
-		repo.On("Add", entity).Return(want, nil)
-		got, err := srv.Add(entity)
+		repo.On("Add", mock.MatchedBy(func(e Entity) bool {
+			return e.Name == entity.Name
+		})).Return(want, nil)
+		got, err := srv.Add(NameRequest{entity.Name})
 		a.NoError(err)
 		a.Equal(want, got)
 		a.True(repo.AssertNumberOfCalls(t, "Add", 1))
 	})
 	t.Run("should return wrapped error", func(t *testing.T) {
 		repo := new(MockRepo)
-		srv := NewService(repo)
-		entity := Entity{}
-		want := fmt.Errorf("role service: add employee: error adding role")
-		repo.On("Add", entity).Return(int64(-1), want)
-		_, got := srv.Add(entity)
+		srv := NewService(repo, validator.New())
+		_, got := srv.Add(NameRequest{}) // Пустое имя
 		a.NotNil(got)
-		a.Equal(want, got)
-		a.True(repo.AssertNumberOfCalls(t, "Add", 1))
+		a.IsType(&common.RequestValidationError{}, got)
+		a.Contains(got.Error(), "validation")
+		a.True(repo.AssertNumberOfCalls(t, "Add", 0))
 	})
 }
 func TestGetAll(t *testing.T) {
 	a := assert.New(t)
 	t.Run("should return roles", func(t *testing.T) {
 		repo := new(MockRepo)
-		srv := NewService(repo)
+		srv := NewService(repo, validator.New())
 		entity1 := Entity{
 			Id: 1, Name: "Admin", CreateAt: time.Now(), UpdateAt: time.Now(),
 		}
@@ -199,7 +201,7 @@ func TestGetAll(t *testing.T) {
 	})
 	t.Run("should return wrapped error", func(t *testing.T) {
 		repo := new(MockRepo)
-		srv := NewService(repo)
+		srv := NewService(repo, validator.New())
 		entities := []Entity{}
 		want := fmt.Errorf("role service: get all roles: error to retrieve all roles")
 		repo.On("GetAll").Return(entities, want)
@@ -215,7 +217,7 @@ func TestGetGroupById(t *testing.T) {
 	a := assert.New(t)
 	t.Run("should return roles by ids", func(t *testing.T) {
 		repo := new(MockRepo)
-		srv := NewService(repo)
+		srv := NewService(repo, validator.New())
 		entity1 := Entity{
 			Id: 1, Name: "Admin", CreateAt: time.Now(), UpdateAt: time.Now(),
 		}
@@ -232,19 +234,19 @@ func TestGetGroupById(t *testing.T) {
 		}
 		ids := []int64{1, 2}
 		repo.On("GetGroupById", ids).Return(entities, nil)
-		got, err := srv.GetGroupById(ids)
+		got, err := srv.GetGroupById(IdsRequest{ids})
 		a.NoError(err)
 		a.Equal(want, got)
 		a.True(repo.AssertNumberOfCalls(t, "GetGroupById", 1))
 	})
 	t.Run("should return wrapped error", func(t *testing.T) {
 		repo := new(MockRepo)
-		srv := NewService(repo)
+		srv := NewService(repo, validator.New())
 		entities := []Entity{}
 		ids := []int64{1, 2}
 		want := fmt.Errorf("role service: get group by id: error getting roles with ids %v", ids)
 		repo.On("GetGroupById", ids).Return(entities, want)
-		response, got := srv.GetGroupById(ids)
+		response, got := srv.GetGroupById(IdsRequest{ids})
 		a.Empty(response)
 		a.NotNil(got)
 		a.Equal(want, got)
@@ -255,19 +257,19 @@ func TestDelete(t *testing.T) {
 	a := assert.New(t)
 	t.Run("should delete role by id", func(t *testing.T) {
 		repo := new(MockRepo)
-		srv := NewService(repo)
+		srv := NewService(repo, validator.New())
 		repo.On("Delete", int64(1)).Return(nil)
-		err := srv.Delete(int64(1))
+		err := srv.Delete(IdRequest{int64(1)})
 		a.NoError(err)
 		a.True(repo.AssertNumberOfCalls(t, "Delete", 1))
 	})
 	t.Run("should return wrapped error", func(t *testing.T) {
 		repo := new(MockRepo)
-		srv := NewService(repo)
+		srv := NewService(repo, validator.New())
 		id := int64(1)
 		want := fmt.Errorf("role service: delete: error deleting role with id %d", id)
 		repo.On("Delete", id).Return(want)
-		got := srv.Delete(id)
+		got := srv.Delete(IdRequest{id})
 		a.NotNil(got)
 		a.Equal(want, got)
 		a.True(repo.AssertNumberOfCalls(t, "Delete", 1))
@@ -277,22 +279,99 @@ func TestDeleteGroup(t *testing.T) {
 	a := assert.New(t)
 	t.Run("should delete roles by ids", func(t *testing.T) {
 		repo := new(MockRepo)
-		srv := NewService(repo)
+		srv := NewService(repo, validator.New())
 		ids := []int64{1, 2}
 		repo.On("DeleteGroup", ids).Return(nil)
-		err := srv.DeleteGroup(ids)
+		err := srv.DeleteGroup(IdsRequest{ids})
 		a.NoError(err)
 		a.True(repo.AssertNumberOfCalls(t, "DeleteGroup", 1))
 	})
 	t.Run("should return wrapped error", func(t *testing.T) {
 		repo := new(MockRepo)
-		srv := NewService(repo)
+		srv := NewService(repo, validator.New())
 		ids := []int64{1, 2}
 		want := fmt.Errorf("role service: delete group: error deleting group with id %v", ids)
 		repo.On("DeleteGroup", ids).Return(want)
-		got := srv.DeleteGroup(ids)
+		got := srv.DeleteGroup(IdsRequest{ids})
 		a.NotNil(got)
 		a.Equal(want, got)
 		a.True(repo.AssertNumberOfCalls(t, "DeleteGroup", 1))
 	})
+}
+
+func TestValidator_IdRequest(t *testing.T) {
+	a := assert.New(t)
+	v := validator.New()
+	tests := []struct {
+		name      string
+		input     IdRequest
+		wantError bool
+		errorHint string
+	}{
+		{name: "correct id", input: IdRequest{1}, wantError: false, errorHint: ""},
+		{name: "zero id", input: IdRequest{0}, wantError: true, errorHint: "Field validation for 'Id' failed on the 'gt' tag"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := v.Validate(tt.input)
+			if tt.wantError {
+				a.Error(err)
+				a.Contains(err.Error(), tt.errorHint)
+			} else {
+				a.NoError(err)
+			}
+		})
+	}
+}
+
+func TestValidator_IdsRequest(t *testing.T) {
+	a := assert.New(t)
+	v := validator.New()
+	tests := []struct {
+		name      string
+		input     IdsRequest
+		wantError bool
+		errorHint string
+	}{
+		{name: "correct ids", input: IdsRequest{[]int64{1, 2, 3}}, wantError: false, errorHint: ""},
+		{name: "short ids", input: IdsRequest{}, wantError: true, errorHint: "Field validation for 'Ids' failed on the 'min' tag"},
+		{name: "zero id", input: IdsRequest{[]int64{1, 2, 0, 3}}, wantError: true, errorHint: "Field validation for 'Ids[2]' failed on the 'gt' tag"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := v.Validate(tt.input)
+			if tt.wantError {
+				a.Error(err)
+				a.Contains(err.Error(), tt.errorHint)
+			} else {
+				a.NoError(err)
+			}
+		})
+	}
+}
+
+func TestValidator_NameRequest(t *testing.T) {
+	a := assert.New(t)
+	v := validator.New()
+	tests := []struct {
+		name      string
+		input     NameRequest
+		wantError bool
+		errorHint string
+	}{
+		{name: "correct name", input: NameRequest{"Ivan"}, wantError: false, errorHint: ""},
+		{name: "empty name", input: NameRequest{""}, wantError: true, errorHint: ""},
+		{name: "short name", input: NameRequest{"a"}, wantError: true, errorHint: ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := v.Validate(tt.input)
+			if tt.wantError {
+				a.Error(err)
+				a.Contains(err.Error(), tt.errorHint)
+			} else {
+				a.NoError(err)
+			}
+		})
+	}
 }
