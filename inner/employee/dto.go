@@ -32,5 +32,5 @@ type IdRequest struct {
 }
 
 type IdsRequest struct {
-	Ids []int64 `param:"ids" validate:"min=1,dive,gt=0"`
+	Ids []int64 `json:"ids" validate:"required,min=1,dive,gt=0"`
 }
