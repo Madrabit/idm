@@ -429,7 +429,7 @@ func TestValidator_IdsRequest(t *testing.T) {
 		errorHint string
 	}{
 		{name: "correct ids", input: IdsRequest{[]int64{1, 2, 3}}, wantError: false, errorHint: ""},
-		{name: "short ids", input: IdsRequest{}, wantError: true, errorHint: "Field validation for 'Ids' failed on the 'min' tag"},
+		{name: "short ids", input: IdsRequest{}, wantError: true, errorHint: "Field validation for 'Ids' failed on the 'required' tag"},
 		{name: "zero id", input: IdsRequest{[]int64{1, 2, 0, 3}}, wantError: true, errorHint: "Field validation for 'Ids[2]' failed on the 'gt' tag"},
 	}
 	for _, tt := range tests {
