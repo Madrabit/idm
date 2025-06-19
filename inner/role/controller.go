@@ -34,8 +34,8 @@ func (c *Controller) RegisterRoutes() {
 	c.server.GroupApiV1.Get("/roles/:id", c.FindById)
 	c.server.GroupApiV1.Get("/roles", c.GetAll)
 	c.server.GroupApiV1.Post("/roles/search", c.GetGroupById)
-	c.server.GroupApiV1.Delete("/roles/:id", c.Delete)
 	c.server.GroupApiV1.Delete("/roles/batch-delete", c.DeleteGroup)
+	c.server.GroupApiV1.Delete("/roles/:id", c.Delete)
 }
 
 func (c *Controller) CreateRole(ctx fiber.Ctx) error {

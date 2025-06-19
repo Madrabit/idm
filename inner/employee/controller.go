@@ -1,6 +1,7 @@
 package employee
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/gofiber/fiber/v3"
 	"idm/inner/common"
@@ -34,8 +35,8 @@ func (c *Controller) RegisterRoutes() {
 	c.server.GroupApiV1.Get("/employees/:id", c.FindById)
 	c.server.GroupApiV1.Get("/employees", c.GetAll)
 	c.server.GroupApiV1.Post("/employees/search", c.GetGroupById)
-	c.server.GroupApiV1.Delete("/employees/:id", c.Delete)
 	c.server.GroupApiV1.Delete("/employees/batch-delete", c.DeleteGroup)
+	c.server.GroupApiV1.Delete("/employees/:id", c.Delete)
 }
 
 func (c *Controller) CreateEmployee(ctx fiber.Ctx) error {
@@ -135,7 +136,8 @@ func (c *Controller) Delete(ctx fiber.Ctx) error {
 
 func (c *Controller) DeleteGroup(ctx fiber.Ctx) error {
 	var request IdsRequest
-	if err := ctx.Bind().Body(&request); err != nil {
+	body := ctx.Body()
+	if err := json.Unmarshal(body, &request); err != nil {
 		return common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
 	}
 	err := c.service.DeleteGroup(request)
@@ -148,5 +150,5 @@ func (c *Controller) DeleteGroup(ctx fiber.Ctx) error {
 			return common.ErrResponse(ctx, fiber.StatusInternalServerError, err.Error())
 		}
 	}
-	return nil
+	return ctx.SendStatus(200)
 }
