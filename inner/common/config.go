@@ -16,9 +16,11 @@ type Config struct {
 }
 
 func GetConfig(envFile string) Config {
-	err := godotenv.Load(envFile)
-	if err != nil {
-		fmt.Printf("error loading .env file: %v", err)
+	if envFile != "" {
+		err := godotenv.Load(envFile)
+		if err != nil {
+			fmt.Printf("error loading .env file: %v", err)
+		}
 	}
 	var cfg = Config{
 		DbDriverName: os.Getenv("DB_DRIVER_NAME"),
@@ -26,7 +28,7 @@ func GetConfig(envFile string) Config {
 		AppName:      os.Getenv("APP_NAME"),
 		AppVersion:   os.Getenv("APP_VERSION"),
 	}
-	err = validator.New().Struct(cfg)
+	err := validator.New().Struct(cfg)
 	if err != nil {
 		var validateErrs validator.ValidationErrors
 		if errors.As(err, &validateErrs) {
