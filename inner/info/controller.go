@@ -13,10 +13,11 @@ type Controller struct {
 	db     *sqlx.DB
 }
 
-func NewController(server *web.Server, cfg common.Config) *Controller {
+func NewController(server *web.Server, cfg common.Config, db *sqlx.DB) *Controller {
 	return &Controller{
 		server: server,
 		cfg:    cfg,
+		db:     db,
 	}
 }
 
@@ -45,8 +46,5 @@ func (c *Controller) GetHealth(ctx fiber.Ctx) error {
 	if err := c.db.Ping(); err != nil {
 		return ctx.Status(fiber.StatusServiceUnavailable).SendString("DOWN")
 	}
-	if err := ctx.Status(fiber.StatusOK).SendString("OK"); err != nil {
-		return common.ErrResponse(ctx, fiber.StatusInternalServerError, err.Error())
-	}
-	return nil
+	return ctx.Status(fiber.StatusOK).SendString("OK")
 }

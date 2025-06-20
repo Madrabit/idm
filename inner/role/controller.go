@@ -30,9 +30,9 @@ func NewController(server *web.Server, service Svc) *Controller {
 }
 
 func (c *Controller) RegisterRoutes() {
+	c.server.GroupApiV1.Get("/roles", c.GetAll)
 	c.server.GroupApiV1.Post("/roles", c.CreateRole)
 	c.server.GroupApiV1.Get("/roles/:id", c.FindById)
-	c.server.GroupApiV1.Get("/roles", c.GetAll)
 	c.server.GroupApiV1.Post("/roles/search", c.GetGroupById)
 	c.server.GroupApiV1.Delete("/roles/batch-delete", c.DeleteGroup)
 	c.server.GroupApiV1.Delete("/roles/:id", c.Delete)
