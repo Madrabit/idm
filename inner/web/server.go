@@ -1,6 +1,8 @@
 package web
 
-import "github.com/gofiber/fiber/v3"
+import (
+	"github.com/gofiber/fiber/v3"
+)
 
 type Server struct {
 	App           *fiber.App
