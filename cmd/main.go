@@ -71,7 +71,7 @@ func build(cfg common.Config, database *sqlx.DB, logger *common.Logger) *web.Ser
 	roleService := role.NewService(roleRepo, vld)
 	roleController := role.NewController(server, roleService, logger)
 	roleController.RegisterRoutes()
-	infoController := info.NewController(server, cfg, database)
+	infoController := info.NewController(server, cfg, database, logger)
 	infoController.RegisterRoutes()
 	return server
 }

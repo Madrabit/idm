@@ -56,7 +56,7 @@ func TestController_Add(t *testing.T) {
 	t.Run("should return created employee id", func(t *testing.T) {
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := NewController(server, svc)
+		controller := NewController(server, svc, nil)
 		controller.RegisterRoutes()
 		body := strings.NewReader("{\"name\": \"john doe\"}")
 		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/employees", body)
@@ -79,7 +79,7 @@ func TestController_Add(t *testing.T) {
 		var a = assert.New(t)
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := NewController(server, svc)
+		controller := NewController(server, svc, nil)
 		controller.RegisterRoutes()
 		body := strings.NewReader("{\"name\": \"\"}")
 		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/employees", body)
@@ -93,7 +93,7 @@ func TestController_Add(t *testing.T) {
 		var a = assert.New(t)
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := NewController(server, svc)
+		controller := NewController(server, svc, nil)
 		controller.RegisterRoutes()
 		body := strings.NewReader(`{"name": "John"}`)
 		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/employees", body)
@@ -109,7 +109,7 @@ func TestController_FindById(t *testing.T) {
 	t.Run("should retrieve employee by id", func(t *testing.T) {
 		server := web.NewServer()
 		var svc = new(MockService)
-		var controller = NewController(server, svc)
+		var controller = NewController(server, svc, nil)
 		controller.RegisterRoutes()
 		fixedTime := time.Date(2025, time.June, 17, 20, 19, 30, 0, time.UTC)
 		employee := Response{
@@ -130,7 +130,7 @@ func TestController_FindById(t *testing.T) {
 		var a = assert.New(t)
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := NewController(server, svc)
+		controller := NewController(server, svc, nil)
 		controller.RegisterRoutes()
 		svc.On("FindById", IdRequest{int64(0)}).Return(Response{}, &common.RequestValidationError{Massage: "ID are required"})
 		req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/0", nil)
@@ -142,7 +142,7 @@ func TestController_FindById(t *testing.T) {
 		var a = assert.New(t)
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := NewController(server, svc)
+		controller := NewController(server, svc, nil)
 		controller.RegisterRoutes()
 		svc.On("FindById", IdRequest{int64(1)}).Return(Response{}, &common.NotFoundError{Massage: "not found employee"})
 		req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/1", nil)
@@ -156,7 +156,7 @@ func TestController_GetAll(t *testing.T) {
 	t.Run("should return all employees", func(t *testing.T) {
 		server := web.NewServer()
 		var svc = new(MockService)
-		var controller = NewController(server, svc)
+		var controller = NewController(server, svc, nil)
 		controller.RegisterRoutes()
 		var req = httptest.NewRequest("GET", "/api/v1/employees", nil)
 		req.Header.Set("Content-Type", "application/json")
@@ -191,7 +191,7 @@ func TestController_GetAll(t *testing.T) {
 		var a = assert.New(t)
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := NewController(server, svc)
+		controller := NewController(server, svc, nil)
 		controller.RegisterRoutes()
 		svc.On("GetAll", mock.Anything).Return([]Response{}, &common.NotFoundError{Massage: "not found employee"})
 		req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/", nil)
@@ -205,7 +205,7 @@ func TestController_GetGroupById(t *testing.T) {
 	t.Run("should return employees by ids", func(t *testing.T) {
 		server := web.NewServer()
 		var svc = new(MockService)
-		var controller = NewController(server, svc)
+		var controller = NewController(server, svc, nil)
 		controller.RegisterRoutes()
 		request := IdsRequest{Ids: []int64{1, 2}}
 		marshal, err := json.Marshal(request)
@@ -244,7 +244,7 @@ func TestController_GetGroupById(t *testing.T) {
 		var a = assert.New(t)
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := NewController(server, svc)
+		controller := NewController(server, svc, nil)
 		controller.RegisterRoutes()
 		invalidRequest := IdsRequest{Ids: nil}
 		requestBody, err := json.Marshal(invalidRequest)
@@ -260,7 +260,7 @@ func TestController_GetGroupById(t *testing.T) {
 		var a = assert.New(t)
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := NewController(server, svc)
+		controller := NewController(server, svc, nil)
 		controller.RegisterRoutes()
 		request := IdsRequest{Ids: []int64{1, 2}}
 		marshal, err := json.Marshal(request)
@@ -279,7 +279,7 @@ func TestController_Delete(t *testing.T) {
 	t.Run("should delete employee by id", func(t *testing.T) {
 		server := web.NewServer()
 		var svc = new(MockService)
-		var controller = NewController(server, svc)
+		var controller = NewController(server, svc, nil)
 		controller.RegisterRoutes()
 		var req = httptest.NewRequest("DELETE", "/api/v1/employees/1", nil)
 		req.Header.Set("Content-Type", "application/json")
@@ -293,7 +293,7 @@ func TestController_Delete(t *testing.T) {
 		var a = assert.New(t)
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := NewController(server, svc)
+		controller := NewController(server, svc, nil)
 		controller.RegisterRoutes()
 		svc.On("Delete", IdRequest{int64(0)}).Return(&common.RequestValidationError{Massage: "ID are required"})
 		req := httptest.NewRequest(http.MethodDelete, "/api/v1/employees/0", nil)
@@ -307,7 +307,7 @@ func TestController_DeleteGroup(t *testing.T) {
 	t.Run("should delete employees by ids", func(t *testing.T) {
 		server := web.NewServer()
 		var svc = new(MockService)
-		var controller = NewController(server, svc)
+		var controller = NewController(server, svc, nil)
 		controller.RegisterRoutes()
 		request := IdsRequest{Ids: []int64{1, 2}}
 		requestBody, err := json.Marshal(request)
@@ -335,7 +335,7 @@ func TestController_DeleteGroup(t *testing.T) {
 		var a = assert.New(t)
 		server := web.NewServer()
 		svc := new(MockService)
-		controller := NewController(server, svc)
+		controller := NewController(server, svc, nil)
 		controller.RegisterRoutes()
 		invalidRequest := IdsRequest{Ids: nil}
 		requestBody, err := json.Marshal(invalidRequest)

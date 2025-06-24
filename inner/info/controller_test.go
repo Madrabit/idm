@@ -21,7 +21,7 @@ func setupTestApp(db *sql.DB, cfg common.Config) *fiber.App {
 		GroupInternal: app.Group("/internal"),
 	}
 	newDb := sqlx.NewDb(db, "sqlmock")
-	ctrl := NewController(server, cfg, newDb)
+	ctrl := NewController(server, cfg, newDb, nil)
 	ctrl.db = newDb
 	ctrl.RegisterRoutes()
 	return app
