@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 	"idm/inner/common"
 	"idm/inner/web"
 	"log"
@@ -16,12 +17,15 @@ import (
 
 func setupTestApp(db *sql.DB, cfg common.Config) *fiber.App {
 	app := fiber.New()
+	logger := &common.Logger{
+		Logger: zap.NewNop(),
+	}
 	server := &web.Server{
 		App:           app,
 		GroupInternal: app.Group("/internal"),
 	}
 	newDb := sqlx.NewDb(db, "sqlmock")
-	ctrl := NewController(server, cfg, newDb)
+	ctrl := NewController(server, cfg, newDb, logger)
 	ctrl.db = newDb
 	ctrl.RegisterRoutes()
 	return app

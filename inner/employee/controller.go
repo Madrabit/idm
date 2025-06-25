@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/gofiber/fiber/v3"
+	"go.uber.org/zap"
 	"idm/inner/common"
 	"idm/inner/web"
 	"strconv"
@@ -12,6 +13,7 @@ import (
 type Controller struct {
 	server  *web.Server
 	service Svc
+	logger  *common.Logger
 }
 
 type Svc interface {
@@ -23,10 +25,11 @@ type Svc interface {
 	DeleteGroup(ids IdsRequest) error
 }
 
-func NewController(server *web.Server, service Svc) *Controller {
+func NewController(server *web.Server, service Svc, logger *common.Logger) *Controller {
 	return &Controller{
 		server:  server,
 		service: service,
+		logger:  logger,
 	}
 }
 
@@ -42,24 +45,31 @@ func (c *Controller) RegisterRoutes() {
 func (c *Controller) CreateEmployee(ctx fiber.Ctx) error {
 	var request NameRequest
 	if err := ctx.Bind().Body(&request); err != nil {
+		c.logger.Error("create employee", zap.Error(err))
 		return common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
 	}
+	c.logger.Debug("create employee: received request", zap.Any("request", request))
 	newEmployeeId, err := c.service.Add(request)
 	var reqErr *common.RequestValidationError
 	var existsErr *common.AlreadyExistsError
 	if err != nil {
+		c.logger.Error("create employee", zap.Error(err))
 		if errors.As(err, &reqErr) || errors.As(err, &existsErr) {
+			c.logger.Error("create employee", zap.Error(err))
 			return common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
 		}
 		return common.ErrResponse(ctx, fiber.StatusInternalServerError, err.Error())
 	}
+	c.logger.Info("employee created", zap.Int64("id", newEmployeeId))
 	return common.OkResponse(ctx, newEmployeeId)
 }
 
 func (c *Controller) FindById(ctx fiber.Ctx) error {
 	param := ctx.Params("id")
 	request, err := strconv.Atoi(param)
+	c.logger.Debug("find by id employee: received request", zap.Any("request", request))
 	if err != nil {
+		c.logger.Error("find by id employee", zap.Error(err))
 		return common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
 	}
 	id := IdRequest{Id: int64(request)}
@@ -67,6 +77,7 @@ func (c *Controller) FindById(ctx fiber.Ctx) error {
 	var reqErr *common.RequestValidationError
 	var notFoundErr *common.NotFoundError
 	if err != nil {
+		c.logger.Error("find by id employee", zap.Error(err))
 		switch {
 		case errors.As(err, &notFoundErr):
 			return common.ErrResponse(ctx, fiber.StatusOK, err.Error())
@@ -83,6 +94,7 @@ func (c *Controller) GetAll(ctx fiber.Ctx) error {
 	employees, err := c.service.GetAll()
 	var notFoundErr *common.NotFoundError
 	if err != nil {
+		c.logger.Error("get all employees", zap.Error(err))
 		switch {
 		case errors.As(err, &notFoundErr):
 			return common.ErrResponse(ctx, fiber.StatusOK, err.Error())
@@ -96,12 +108,14 @@ func (c *Controller) GetAll(ctx fiber.Ctx) error {
 func (c *Controller) GetGroupById(ctx fiber.Ctx) error {
 	var request IdsRequest
 	if err := ctx.Bind().Body(&request); err != nil {
+		c.logger.Error("get employees by ids", zap.Error(err))
 		return common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
 	}
 	employees, err := c.service.GetGroupById(request)
 	var reqErr *common.RequestValidationError
 	var notFoundErr *common.NotFoundError
 	if err != nil {
+		c.logger.Error("get employees by ids", zap.Error(err))
 		switch {
 		case errors.As(err, &notFoundErr):
 			return common.ErrResponse(ctx, fiber.StatusOK, err.Error())
@@ -117,13 +131,16 @@ func (c *Controller) GetGroupById(ctx fiber.Ctx) error {
 func (c *Controller) Delete(ctx fiber.Ctx) error {
 	param := ctx.Params("id")
 	request, err := strconv.Atoi(param)
+	c.logger.Debug("delete employee: received request", zap.Any("request", request))
 	if err != nil {
+		c.logger.Error("delete employee", zap.Error(err))
 		return common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
 	}
 	id := IdRequest{Id: int64(request)}
 	err = c.service.Delete(id)
 	var reqErr *common.RequestValidationError
 	if err != nil {
+		c.logger.Error("delete employee", zap.Error(err))
 		switch {
 		case errors.As(err, &reqErr):
 			return common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
@@ -131,6 +148,7 @@ func (c *Controller) Delete(ctx fiber.Ctx) error {
 			return common.ErrResponse(ctx, fiber.StatusInternalServerError, err.Error())
 		}
 	}
+	c.logger.Info("employee deleted", zap.Int64("id", int64(request)))
 	return nil
 }
 
@@ -138,11 +156,14 @@ func (c *Controller) DeleteGroup(ctx fiber.Ctx) error {
 	var request IdsRequest
 	body := ctx.Body()
 	if err := json.Unmarshal(body, &request); err != nil {
+		c.logger.Error("delete group employees by ids", zap.Error(err))
 		return common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
 	}
+	c.logger.Debug("delete group employees: received request", zap.Any("request", request))
 	err := c.service.DeleteGroup(request)
 	var reqErr *common.RequestValidationError
 	if err != nil {
+		c.logger.Error("delete group employees by ids", zap.Error(err))
 		switch {
 		case errors.As(err, &reqErr):
 			return common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
@@ -150,5 +171,6 @@ func (c *Controller) DeleteGroup(ctx fiber.Ctx) error {
 			return common.ErrResponse(ctx, fiber.StatusInternalServerError, err.Error())
 		}
 	}
+	c.logger.Info("employee deleted")
 	return ctx.SendStatus(200)
 }

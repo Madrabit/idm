@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"github.com/jmoiron/sqlx"
+	"go.uber.org/zap"
 	"idm/inner/common"
 	database2 "idm/inner/database"
 	"idm/inner/employee"
@@ -19,26 +19,28 @@ import (
 
 func main() {
 	cfg := common.GetConfig(".env")
+	logger := common.NewLogger(cfg)
+	defer func() { _ = logger.Sync() }()
 	db := database2.ConnectDbWithCfg(cfg)
 	defer func() {
 		if err := db.Close(); err != nil {
-			fmt.Printf("error closing db: %v", err)
+			logger.Panic("error closing db: %v", zap.Error(err))
 		}
 	}()
-	server := build(cfg, db)
+	server := build(cfg, db, logger)
 	go func() {
 		if err := server.App.Listen(":8080"); err != nil {
-			panic(fmt.Sprintf("http server error: %s", err))
+			logger.Panic("http server error: %v", zap.Error(err))
 		}
 	}()
 	var wg = &sync.WaitGroup{}
 	wg.Add(1)
-	go gracefulShutdown(server, wg)
+	go gracefulShutdown(server, wg, logger)
 	wg.Wait()
-	fmt.Println("Graceful shutdown complete.")
+	logger.Info("Graceful shutdown complete.")
 }
 
-func gracefulShutdown(server *web.Server, wg *sync.WaitGroup) {
+func gracefulShutdown(server *web.Server, wg *sync.WaitGroup, logger *common.Logger) {
 	const shutdownTimeout = 5 * time.Second
 	defer wg.Done()
 	shutdownSignal, unsubscribeSignal := signal.NotifyContext(context.Background(),
@@ -52,24 +54,24 @@ func gracefulShutdown(server *web.Server, wg *sync.WaitGroup) {
 	shutdownCtx, clearCtx := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer clearCtx()
 	if err := server.App.ShutdownWithContext(shutdownCtx); err != nil {
-		fmt.Printf("Server forced to shutdown with error: %v\n", err)
+		logger.Error("server forced to shutdown with error: %v\n", zap.Error(err))
 		return
 	}
-	fmt.Println("Server exiting")
+	logger.Info("Server exiting")
 }
 
-func build(cfg common.Config, database *sqlx.DB) *web.Server {
+func build(cfg common.Config, database *sqlx.DB, logger *common.Logger) *web.Server {
 	server := web.NewServer()
 	vld := validator.New()
 	employeeRepo := employee.NewRepository(database)
 	employeeService := employee.NewService(employeeRepo, vld)
-	employeeController := employee.NewController(server, employeeService)
+	employeeController := employee.NewController(server, employeeService, logger)
 	employeeController.RegisterRoutes()
 	roleRepo := role.NewRepository(database)
 	roleService := role.NewService(roleRepo, vld)
-	roleController := role.NewController(server, roleService)
+	roleController := role.NewController(server, roleService, logger)
 	roleController.RegisterRoutes()
-	infoController := info.NewController(server, cfg, database)
+	infoController := info.NewController(server, cfg, database, logger)
 	infoController.RegisterRoutes()
 	return server
 }
