@@ -1,6 +1,7 @@
 package employee
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -23,7 +24,7 @@ func (m *MockRepo) FindById(id int64) (Entity, error) {
 	return args.Get(0).(Entity), args.Error(1)
 }
 
-func (m *MockRepo) GetAll() ([]Entity, error) {
+func (m *MockRepo) GetAll(context.Context) ([]Entity, error) {
 	args := m.Called()
 	return args.Get(0).([]Entity), args.Error(1)
 }
@@ -286,7 +287,7 @@ func TestGetAll(t *testing.T) {
 			want = append(want, e.toResponse())
 		}
 		repo.On("GetAll").Return(entities, nil)
-		got, err := srv.GetAll()
+		got, err := srv.GetAll(context.Background())
 		a.NoError(err)
 		a.Equal(want, got)
 		a.True(repo.AssertNumberOfCalls(t, "GetAll", 1))
@@ -297,7 +298,7 @@ func TestGetAll(t *testing.T) {
 		entities := []Entity{}
 		want := fmt.Errorf("employee service: get all employees: error to retrieve all employees")
 		repo.On("GetAll").Return(entities, want)
-		response, got := srv.GetAll()
+		response, got := srv.GetAll(context.Background())
 		a.Empty(response)
 		a.NotNil(got)
 		a.Equal(want, got)

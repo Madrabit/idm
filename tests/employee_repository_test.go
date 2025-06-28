@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,7 +34,8 @@ func TestEmployeeRepository(t *testing.T) {
 		mustEmployee(t, fx, "name 1")
 		mustEmployee(t, fx, "name 2")
 		mustEmployee(t, fx, "name 3")
-		got, err := repo.GetAll()
+		ctx := context.Background()
+		got, err := repo.GetAll(ctx)
 		a.Nil(err)
 		a.NotEmpty(got)
 		a.Len(got, 3)

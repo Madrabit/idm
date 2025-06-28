@@ -1,6 +1,7 @@
 package employee
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -16,7 +17,7 @@ type Service struct {
 type Repo interface {
 	FindById(id int64) (Entity, error)
 	FindByNameTx(tx *sqlx.Tx, name string) (bool, error)
-	GetAll() ([]Entity, error)
+	GetAll(ctx context.Context) ([]Entity, error)
 	Add(tx *sqlx.Tx, employee Entity) (int64, error)
 	GetGroupById(ids []int64) ([]Entity, error)
 	Delete(id int64) error
@@ -47,8 +48,8 @@ func (s *Service) FindById(req IdRequest) (employee Response, err error) {
 	return entity.toResponse(), nil
 }
 
-func (s *Service) GetAll() ([]Response, error) {
-	all, err := s.repo.GetAll()
+func (s *Service) GetAll(ctx context.Context) ([]Response, error) {
+	all, err := s.repo.GetAll(ctx)
 	if err != nil {
 		return []Response{}, fmt.Errorf("employee service: get all employees: error to retrieve all employees")
 	}

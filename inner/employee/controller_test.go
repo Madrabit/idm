@@ -2,6 +2,7 @@ package employee
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"github.com/gofiber/fiber/v3"
 	"github.com/stretchr/testify/assert"
@@ -32,7 +33,7 @@ func (svc *MockService) Add(request NameRequest) (int64, error) {
 	return args.Get(0).(int64), args.Error(1)
 }
 
-func (svc *MockService) GetAll() ([]Response, error) {
+func (svc *MockService) GetAll(ctx context.Context) ([]Response, error) {
 	args := svc.Called()
 	return args.Get(0).([]Response), args.Error(1)
 }
