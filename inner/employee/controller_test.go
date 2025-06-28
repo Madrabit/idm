@@ -159,6 +159,7 @@ func TestController_FindById(t *testing.T) {
 		a.Equal(http.StatusOK, resp.StatusCode)
 	})
 }
+
 func TestController_GetAll(t *testing.T) {
 	var a = assert.New(t)
 	logger := &common.Logger{
@@ -166,10 +167,10 @@ func TestController_GetAll(t *testing.T) {
 	}
 	t.Run("should return all employees", func(t *testing.T) {
 		server := web.NewServer()
-		var svc = new(MockService)
-		var controller = NewController(server, svc, logger)
+		svc := new(MockService)
+		controller := NewController(server, svc, logger)
 		controller.RegisterRoutes()
-		var req = httptest.NewRequest("GET", "/api/v1/employees", nil)
+		req := httptest.NewRequest("GET", "/api/v1/employees", nil)
 		req.Header.Set("Content-Type", "application/json")
 		fixedTime := time.Date(2025, time.June, 17, 20, 19, 30, 0, time.UTC)
 		entity := []Response{

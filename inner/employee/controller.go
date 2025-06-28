@@ -94,9 +94,6 @@ func (c *Controller) FindById(ctx fiber.Ctx) error {
 
 func (c *Controller) GetAll(ctx fiber.Ctx) error {
 	myCxt := ctx.Context()
-	myCtx := context.WithValue(myCxt, "ctxLogger", c.logger)
-	ctxLogger := myCtx.Value("ctxLogger").(*zap.Logger)
-	ctxLogger.Info("get all employees from Context logger")
 	timeoutCtx, cancel := context.WithTimeout(myCxt, time.Second*5)
 	defer cancel()
 	employees, err := c.service.GetAll(timeoutCtx)
