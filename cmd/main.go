@@ -5,7 +5,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 	"idm/inner/common"
-	database2 "idm/inner/database"
+	"idm/inner/database"
 	"idm/inner/employee"
 	"idm/inner/info"
 	"idm/inner/role"
@@ -21,7 +21,7 @@ func main() {
 	cfg := common.GetConfig(".env")
 	logger := common.NewLogger(cfg)
 	defer func() { _ = logger.Sync() }()
-	db := database2.ConnectDbWithCfg(cfg)
+	db := database.ConnectDbWithCfg(cfg)
 	defer func() {
 		if err := db.Close(); err != nil {
 			logger.Panic("error closing db: %v", zap.Error(err))

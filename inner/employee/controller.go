@@ -1,6 +1,7 @@
 package employee
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"github.com/gofiber/fiber/v3"
@@ -8,6 +9,7 @@ import (
 	"idm/inner/common"
 	"idm/inner/web"
 	"strconv"
+	"time"
 )
 
 type Controller struct {
@@ -18,7 +20,7 @@ type Controller struct {
 
 type Svc interface {
 	FindById(id IdRequest) (employee Response, err error)
-	GetAll() ([]Response, error)
+	GetAll(ctx context.Context) ([]Response, error)
 	Add(request NameRequest) (id int64, err error)
 	GetGroupById(ids IdsRequest) ([]Response, error)
 	Delete(id IdRequest) error
@@ -91,13 +93,18 @@ func (c *Controller) FindById(ctx fiber.Ctx) error {
 }
 
 func (c *Controller) GetAll(ctx fiber.Ctx) error {
-	employees, err := c.service.GetAll()
+	myCxt := ctx.Context()
+	timeoutCtx, cancel := context.WithTimeout(myCxt, time.Second*5)
+	defer cancel()
+	employees, err := c.service.GetAll(timeoutCtx)
 	var notFoundErr *common.NotFoundError
 	if err != nil {
 		c.logger.Error("get all employees", zap.Error(err))
 		switch {
 		case errors.As(err, &notFoundErr):
 			return common.ErrResponse(ctx, fiber.StatusOK, err.Error())
+		case errors.Is(err, context.DeadlineExceeded):
+			return common.ErrResponse(ctx, fiber.StatusGatewayTimeout, "timeout exceeded")
 		default:
 			return common.ErrResponse(ctx, fiber.StatusInternalServerError, err.Error())
 		}

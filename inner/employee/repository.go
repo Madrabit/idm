@@ -1,6 +1,7 @@
 package employee
 
 import (
+	"context"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -30,9 +31,9 @@ func (r *Repository) FindByNameTx(tx *sqlx.Tx, name string) (isExists bool, err 
 	return isExists, err
 }
 
-func (r *Repository) GetAll() ([]Entity, error) {
+func (r *Repository) GetAll(ctx context.Context) ([]Entity, error) {
 	var employees []Entity
-	rows, err := r.db.Queryx("SELECT * FROM employee")
+	rows, err := r.db.QueryxContext(ctx, "SELECT * FROM employee")
 	if err != nil {
 		return employees, err
 	}
