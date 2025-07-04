@@ -72,10 +72,10 @@ func TestFindById(t *testing.T) {
 		repo := new(MockRepo)
 		srv := NewService(repo, validator.New())
 		entity := Entity{
-			Id:       1,
-			Name:     "John",
-			CreateAt: time.Now(),
-			UpdateAt: time.Now(),
+			Id:        1,
+			Name:      "John",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
 		}
 		want := entity.toResponse()
 		repo.On("FindById", int64(1)).Return(entity, nil)
@@ -139,10 +139,10 @@ func TestAdd(t *testing.T) {
 			t.Fatal(err)
 		}
 		entity := Entity{
-			Id:       1,
-			Name:     "John",
-			CreateAt: time.Now(),
-			UpdateAt: time.Now(),
+			Id:        1,
+			Name:      "John",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
 		}
 		repo.On("BeginTransaction").Return(tx, nil)
 		want := fmt.Errorf("rollback failed: original error: employee service: add employee: error checking exists employee")
@@ -180,10 +180,10 @@ func TestAdd(t *testing.T) {
 			t.Fatal(err)
 		}
 		entity := Entity{
-			Id:       1,
-			Name:     "John",
-			CreateAt: time.Now(),
-			UpdateAt: time.Now(),
+			Id:        1,
+			Name:      "John",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
 		}
 		repo.On("BeginTransaction").Return(tx, nil)
 		repo.On("FindByNameTx", tx, entity.Name).Return(true, nil)
@@ -219,10 +219,10 @@ func TestAdd(t *testing.T) {
 			t.Fatal(err)
 		}
 		entity := Entity{
-			Id:       1,
-			Name:     "John",
-			CreateAt: time.Now(),
-			UpdateAt: time.Now(),
+			Id:        1,
+			Name:      "John",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
 		}
 		want := fmt.Errorf("employee service: add employee: error adding employee")
 		repo.On("BeginTransaction").Return(tx, nil)
@@ -261,7 +261,7 @@ func TestAdd(t *testing.T) {
 			t.Fatal(err)
 		}
 		entity := Entity{
-			Id: 1, Name: "John", CreateAt: time.Now(), UpdateAt: time.Now(),
+			Id: 1, Name: "John", CreatedAt: time.Now(), UpdatedAt: time.Now(),
 		}
 		want := int64(1)
 		repo.On("BeginTransaction").Return(tx, nil)
@@ -281,13 +281,13 @@ func TestGetAll(t *testing.T) {
 		repo := new(MockRepo)
 		srv := NewService(repo, validator.New())
 		entity1 := Entity{
-			Id: 1, Name: "John", CreateAt: time.Now(), UpdateAt: time.Now(),
+			Id: 1, Name: "John", CreatedAt: time.Now(), UpdatedAt: time.Now(),
 		}
 		entity2 := Entity{
-			Id: 2, Name: "Ivan", CreateAt: time.Now(), UpdateAt: time.Now(),
+			Id: 2, Name: "Ivan", CreatedAt: time.Now(), UpdatedAt: time.Now(),
 		}
 		entity3 := Entity{
-			Id: 3, Name: "Mr. Smith", CreateAt: time.Now(), UpdateAt: time.Now(),
+			Id: 3, Name: "Mr. Smith", CreatedAt: time.Now(), UpdatedAt: time.Now(),
 		}
 		entities := []Entity{entity1, entity2, entity3}
 		want := []Response{}
@@ -320,13 +320,13 @@ func TestGetGroupById(t *testing.T) {
 		repo := new(MockRepo)
 		srv := NewService(repo, validator.New())
 		entity1 := Entity{
-			Id: 1, Name: "John", CreateAt: time.Now(), UpdateAt: time.Now(),
+			Id: 1, Name: "John", CreatedAt: time.Now(), UpdatedAt: time.Now(),
 		}
 		entity2 := Entity{
-			Id: 2, Name: "Ivan", CreateAt: time.Now(), UpdateAt: time.Now(),
+			Id: 2, Name: "Ivan", CreatedAt: time.Now(), UpdatedAt: time.Now(),
 		}
 		entity3 := Entity{
-			Id: 3, Name: "Mr. Smith", CreateAt: time.Now(), UpdateAt: time.Now(),
+			Id: 3, Name: "Mr. Smith", CreatedAt: time.Now(), UpdatedAt: time.Now(),
 		}
 		entities := []Entity{entity1, entity2, entity3}
 		want := []Response{}
