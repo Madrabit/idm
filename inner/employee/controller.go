@@ -25,6 +25,7 @@ type Svc interface {
 	GetGroupById(ids IdsRequest) ([]Response, error)
 	Delete(id IdRequest) error
 	DeleteGroup(ids IdsRequest) error
+	GetPage(request PageRequest) (PageResponse, error)
 }
 
 func NewController(server *web.Server, service Svc, logger *common.Logger) *Controller {
@@ -37,11 +38,13 @@ func NewController(server *web.Server, service Svc, logger *common.Logger) *Cont
 
 func (c *Controller) RegisterRoutes() {
 	c.server.GroupApiV1.Post("/employees", c.CreateEmployee)
+	c.server.GroupApiV1.Get("/employees/page", c.GetPage)
 	c.server.GroupApiV1.Get("/employees/:id", c.FindById)
 	c.server.GroupApiV1.Get("/employees", c.GetAll)
 	c.server.GroupApiV1.Post("/employees/search", c.GetGroupById)
 	c.server.GroupApiV1.Delete("/employees/batch-delete", c.DeleteGroup)
 	c.server.GroupApiV1.Delete("/employees/:id", c.Delete)
+
 }
 
 func (c *Controller) CreateEmployee(ctx fiber.Ctx) error {
@@ -180,4 +183,36 @@ func (c *Controller) DeleteGroup(ctx fiber.Ctx) error {
 	}
 	c.logger.Info("employee deleted")
 	return ctx.SendStatus(200)
+}
+
+func (c *Controller) GetPage(ctx fiber.Ctx) error {
+	number, err := strconv.ParseInt(ctx.Query("pageNumber", "0"), 10, 64)
+	if err != nil {
+		c.logger.Error("get page of employee: wrong pageNumber", zap.Error(err))
+		return common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
+	}
+	size, err := strconv.ParseInt(ctx.Query("pageSize"), 10, 64)
+	if err != nil {
+		c.logger.Error("get page of employee: wrong pageSize", zap.Error(err))
+		return common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
+	}
+	request := PageRequest{
+		PageSize:   size,
+		PageNumber: number,
+	}
+	employees, err := c.service.GetPage(request)
+	var reqErr *common.RequestValidationError
+	var notFoundErr *common.NotFoundError
+	if err != nil {
+		c.logger.Error("get page of employees", zap.Error(err))
+		switch {
+		case errors.As(err, &notFoundErr):
+			return common.ErrResponse(ctx, fiber.StatusOK, err.Error())
+		case errors.As(err, &reqErr):
+			return common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
+		default:
+			return common.ErrResponse(ctx, fiber.StatusInternalServerError, err.Error())
+		}
+	}
+	return common.OkResponse(ctx, employees)
 }

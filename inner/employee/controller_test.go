@@ -23,6 +23,10 @@ type MockService struct {
 	mock.Mock
 }
 
+func (svc *MockService) GetPage(request PageRequest) (PageResponse, error) {
+	panic("implement me")
+}
+
 func (svc *MockService) FindById(id IdRequest) (Response, error) {
 	args := svc.Called(id)
 	return args.Get(0).(Response), args.Error(1)
