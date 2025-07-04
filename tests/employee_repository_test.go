@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -147,9 +148,18 @@ func TestEmployeeRepository(t *testing.T) {
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
-		repo.Add(tx, entity1)
-		repo.Add(tx, entity2)
-		repo.Add(tx, entity3)
+		_, err = repo.Add(tx, entity1)
+		if err != nil {
+			fmt.Println("error add employee at test")
+		}
+		_, err = repo.Add(tx, entity2)
+		if err != nil {
+			fmt.Println("error add employee at test")
+		}
+		_, err = repo.Add(tx, entity3)
+		if err != nil {
+			fmt.Println("error add employee at test")
+		}
 		got, err := repo.FindWithPagination(tx, 0, 3)
 		a.Nil(err)
 		a.NotEmpty(got)
