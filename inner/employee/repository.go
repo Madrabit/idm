@@ -107,3 +107,9 @@ func (r *Repository) GetTotal(tx *sqlx.Tx) (count int64, err error) {
 	err = tx.Get(&count, "SELECT COUNT(*) FROM employee")
 	return count, err
 }
+
+func (r *Repository) FindKeySetPagination(tx *sqlx.Tx, lastId, limit int64) (employees []Entity, err error) {
+	query := "select * from employee where id > $1 order by id limit $2;"
+	err = tx.Select(&employees, query, lastId, limit)
+	return employees, err
+}

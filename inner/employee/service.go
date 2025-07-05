@@ -25,6 +25,7 @@ type Repo interface {
 	BeginTransaction() (*sqlx.Tx, error)
 	FindWithPagination(tx *sqlx.Tx, offset, limit int64) ([]Entity, error)
 	GetTotal(tx *sqlx.Tx) (count int64, err error)
+	FindKeySetPagination(tx *sqlx.Tx, lastId, limit int64) ([]Entity, error)
 }
 
 type Validator interface {
@@ -176,6 +177,48 @@ func (s *Service) GetPage(request PageRequest) (pageEmp PageResponse, err error)
 		request.PageSize,
 		request.PageNumber,
 		total,
+	}
+	return pageEmp, nil
+}
+
+func (s *Service) GetKeySetPage(request PageKeySetRequest) (pageEmp PageKeySetResponse, err error) {
+	if err = s.validator.Validate(request); err != nil {
+		return PageKeySetResponse{}, &common.RequestValidationError{Massage: err.Error()}
+	}
+	tx, err := s.repo.BeginTransaction()
+	if err != nil {
+		return PageKeySetResponse{}, fmt.Errorf("employee service: get page: error starting transaction")
+	}
+	defer func() {
+		if p := recover(); p != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("employee service: get page: panic add employee: %v", p)
+			return
+		}
+		if err != nil {
+			if rbErr := tx.Rollback(); rbErr != nil {
+				err = fmt.Errorf("rollback failed: original error: %w", err)
+			}
+			return
+		}
+		if commitErr := tx.Commit(); commitErr != nil {
+			err = fmt.Errorf("employee service: get page: committing transaction failed: %w", commitErr)
+		}
+	}()
+	lastId := request.LastId
+	limit := request.PageSize
+	page, err := s.repo.FindKeySetPagination(tx, lastId, limit)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return PageKeySetResponse{}, fmt.Errorf("employee service: get page")
+	}
+	total, err := s.repo.GetTotal(tx)
+	if err != nil {
+		return PageKeySetResponse{}, fmt.Errorf("employee service: get total count of page")
+	}
+	pageEmp = PageKeySetResponse{
+		Result: page,
+		LastId: lastId,
+		Total:  total,
 	}
 	return pageEmp, nil
 }

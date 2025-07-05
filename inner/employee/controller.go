@@ -26,6 +26,7 @@ type Svc interface {
 	Delete(id IdRequest) error
 	DeleteGroup(ids IdsRequest) error
 	GetPage(request PageRequest) (PageResponse, error)
+	GetKeySetPage(request PageKeySetRequest) (PageKeySetResponse, error)
 }
 
 func NewController(server *web.Server, service Svc, logger *common.Logger) *Controller {
@@ -39,6 +40,7 @@ func NewController(server *web.Server, service Svc, logger *common.Logger) *Cont
 func (c *Controller) RegisterRoutes() {
 	c.server.GroupApiV1.Post("/employees", c.CreateEmployee)
 	c.server.GroupApiV1.Get("/employees/page", c.GetPage)
+	c.server.GroupApiV1.Get("/employees/page-key-set", c.GetPage)
 	c.server.GroupApiV1.Get("/employees/:id", c.FindById)
 	c.server.GroupApiV1.Get("/employees", c.GetAll)
 	c.server.GroupApiV1.Post("/employees/search", c.GetGroupById)
@@ -201,6 +203,39 @@ func (c *Controller) GetPage(ctx fiber.Ctx) error {
 		PageNumber: number,
 	}
 	employees, err := c.service.GetPage(request)
+	var reqErr *common.RequestValidationError
+	var notFoundErr *common.NotFoundError
+	if err != nil {
+		c.logger.Error("get page of employees", zap.Error(err))
+		switch {
+		case errors.As(err, &notFoundErr):
+			return common.ErrResponse(ctx, fiber.StatusOK, err.Error())
+		case errors.As(err, &reqErr):
+			return common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
+		default:
+			return common.ErrResponse(ctx, fiber.StatusInternalServerError, err.Error())
+		}
+	}
+	return common.OkResponse(ctx, employees)
+}
+
+func (c *Controller) GetKeySetPage(ctx fiber.Ctx) error {
+	lastId, err := strconv.ParseInt(ctx.Query("lastId", "1"), 10, 64)
+	if err != nil {
+		c.logger.Error("get page of employee: wrong id", zap.Error(err))
+		return common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
+	}
+	size, err := strconv.ParseInt(ctx.Query("pageSize"), 10, 64)
+	if err != nil {
+		c.logger.Error("get page of employee: wrong pageSize", zap.Error(err))
+		return common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
+	}
+	request := PageKeySetRequest{
+		LastId:   lastId,
+		PageSize: size,
+		IsNext:   true,
+	}
+	employees, err := c.service.GetKeySetPage(request)
 	var reqErr *common.RequestValidationError
 	var notFoundErr *common.NotFoundError
 	if err != nil {
