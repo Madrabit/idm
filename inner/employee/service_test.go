@@ -19,6 +19,14 @@ type MockRepo struct {
 	mock.Mock
 }
 
+func (m *MockRepo) FindWithPagination(tx *sqlx.Tx, offset, limit int64) ([]Entity, error) {
+	panic("implement me")
+}
+
+func (m *MockRepo) GetTotal(tx *sqlx.Tx) (count int64, err error) {
+	panic("implement me")
+}
+
 func (m *MockRepo) FindById(id int64) (Entity, error) {
 	args := m.Called(id)
 	return args.Get(0).(Entity), args.Error(1)
@@ -64,10 +72,10 @@ func TestFindById(t *testing.T) {
 		repo := new(MockRepo)
 		srv := NewService(repo, validator.New())
 		entity := Entity{
-			Id:       1,
-			Name:     "John",
-			CreateAt: time.Now(),
-			UpdateAt: time.Now(),
+			Id:        1,
+			Name:      "John",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
 		}
 		want := entity.toResponse()
 		repo.On("FindById", int64(1)).Return(entity, nil)
@@ -131,10 +139,10 @@ func TestAdd(t *testing.T) {
 			t.Fatal(err)
 		}
 		entity := Entity{
-			Id:       1,
-			Name:     "John",
-			CreateAt: time.Now(),
-			UpdateAt: time.Now(),
+			Id:        1,
+			Name:      "John",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
 		}
 		repo.On("BeginTransaction").Return(tx, nil)
 		want := fmt.Errorf("rollback failed: original error: employee service: add employee: error checking exists employee")
@@ -172,10 +180,10 @@ func TestAdd(t *testing.T) {
 			t.Fatal(err)
 		}
 		entity := Entity{
-			Id:       1,
-			Name:     "John",
-			CreateAt: time.Now(),
-			UpdateAt: time.Now(),
+			Id:        1,
+			Name:      "John",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
 		}
 		repo.On("BeginTransaction").Return(tx, nil)
 		repo.On("FindByNameTx", tx, entity.Name).Return(true, nil)
@@ -211,10 +219,10 @@ func TestAdd(t *testing.T) {
 			t.Fatal(err)
 		}
 		entity := Entity{
-			Id:       1,
-			Name:     "John",
-			CreateAt: time.Now(),
-			UpdateAt: time.Now(),
+			Id:        1,
+			Name:      "John",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
 		}
 		want := fmt.Errorf("employee service: add employee: error adding employee")
 		repo.On("BeginTransaction").Return(tx, nil)
@@ -253,7 +261,7 @@ func TestAdd(t *testing.T) {
 			t.Fatal(err)
 		}
 		entity := Entity{
-			Id: 1, Name: "John", CreateAt: time.Now(), UpdateAt: time.Now(),
+			Id: 1, Name: "John", CreatedAt: time.Now(), UpdatedAt: time.Now(),
 		}
 		want := int64(1)
 		repo.On("BeginTransaction").Return(tx, nil)
@@ -273,13 +281,13 @@ func TestGetAll(t *testing.T) {
 		repo := new(MockRepo)
 		srv := NewService(repo, validator.New())
 		entity1 := Entity{
-			Id: 1, Name: "John", CreateAt: time.Now(), UpdateAt: time.Now(),
+			Id: 1, Name: "John", CreatedAt: time.Now(), UpdatedAt: time.Now(),
 		}
 		entity2 := Entity{
-			Id: 2, Name: "Ivan", CreateAt: time.Now(), UpdateAt: time.Now(),
+			Id: 2, Name: "Ivan", CreatedAt: time.Now(), UpdatedAt: time.Now(),
 		}
 		entity3 := Entity{
-			Id: 3, Name: "Mr. Smith", CreateAt: time.Now(), UpdateAt: time.Now(),
+			Id: 3, Name: "Mr. Smith", CreatedAt: time.Now(), UpdatedAt: time.Now(),
 		}
 		entities := []Entity{entity1, entity2, entity3}
 		want := []Response{}
@@ -312,13 +320,13 @@ func TestGetGroupById(t *testing.T) {
 		repo := new(MockRepo)
 		srv := NewService(repo, validator.New())
 		entity1 := Entity{
-			Id: 1, Name: "John", CreateAt: time.Now(), UpdateAt: time.Now(),
+			Id: 1, Name: "John", CreatedAt: time.Now(), UpdatedAt: time.Now(),
 		}
 		entity2 := Entity{
-			Id: 2, Name: "Ivan", CreateAt: time.Now(), UpdateAt: time.Now(),
+			Id: 2, Name: "Ivan", CreatedAt: time.Now(), UpdatedAt: time.Now(),
 		}
 		entity3 := Entity{
-			Id: 3, Name: "Mr. Smith", CreateAt: time.Now(), UpdateAt: time.Now(),
+			Id: 3, Name: "Mr. Smith", CreatedAt: time.Now(), UpdatedAt: time.Now(),
 		}
 		entities := []Entity{entity1, entity2, entity3}
 		want := []Response{}
@@ -467,6 +475,59 @@ func TestValidator_NameRequest(t *testing.T) {
 				a.Contains(err.Error(), tt.errorHint)
 			} else {
 				a.NoError(err)
+			}
+		})
+	}
+}
+func TestPageRequestValidation(t *testing.T) {
+	validate := validator.New()
+
+	tests := []struct {
+		name    string
+		input   PageRequest
+		wantErr bool
+	}{
+		{
+			name: "valid input",
+			input: PageRequest{
+				PageNumber: 0,
+				PageSize:   10,
+			},
+			wantErr: false,
+		},
+		{
+			name: "PageSize < 1",
+			input: PageRequest{
+				PageNumber: 1,
+				PageSize:   0,
+			},
+			wantErr: true,
+		},
+		{
+			name: "PageSize > 100",
+			input: PageRequest{
+				PageNumber: 2,
+				PageSize:   101,
+			},
+			wantErr: true,
+		},
+		{
+			name: "PageNumber < 0",
+			input: PageRequest{
+				PageNumber: -1,
+				PageSize:   20,
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validate.Validate(tt.input)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}

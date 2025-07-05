@@ -23,6 +23,8 @@ type Repo interface {
 	Delete(id int64) error
 	DeleteGroup(ids []int64) error
 	BeginTransaction() (*sqlx.Tx, error)
+	FindWithPagination(tx *sqlx.Tx, offset, limit int64) ([]Entity, error)
+	GetTotal(tx *sqlx.Tx) (count int64, err error)
 }
 
 type Validator interface {
@@ -133,4 +135,47 @@ func (s *Service) DeleteGroup(req IdsRequest) error {
 		return fmt.Errorf("employee service: delete group: error deleting group with id %v", req.Ids)
 	}
 	return nil
+}
+
+func (s *Service) GetPage(request PageRequest) (pageEmp PageResponse, err error) {
+	if err = s.validator.Validate(request); err != nil {
+		return PageResponse{}, &common.RequestValidationError{Massage: err.Error()}
+	}
+	tx, err := s.repo.BeginTransaction()
+	if err != nil {
+		return PageResponse{}, fmt.Errorf("employee service: get page: error starting transaction")
+	}
+	defer func() {
+		if p := recover(); p != nil {
+			_ = tx.Rollback()
+			err = fmt.Errorf("employee service: get page: panic add employee: %v", p)
+			return
+		}
+		if err != nil {
+			if rbErr := tx.Rollback(); rbErr != nil {
+				err = fmt.Errorf("rollback failed: original error: %w", err)
+			}
+			return
+		}
+		if commitErr := tx.Commit(); commitErr != nil {
+			err = fmt.Errorf("employee service: get page: committing transaction failed: %w", commitErr)
+		}
+	}()
+	offset := request.PageNumber * request.PageSize
+	limit := request.PageSize
+	page, err := s.repo.FindWithPagination(tx, offset, limit)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return PageResponse{}, fmt.Errorf("employee service: get page")
+	}
+	total, err := s.repo.GetTotal(tx)
+	if err != nil {
+		return PageResponse{}, fmt.Errorf("employee service: get total count of page")
+	}
+	pageEmp = PageResponse{
+		page,
+		request.PageSize,
+		request.PageNumber,
+		total,
+	}
+	return pageEmp, nil
 }

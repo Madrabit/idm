@@ -96,3 +96,14 @@ func (r *Repository) DeleteGroup(ids []int64) error {
 	}
 	return nil
 }
+
+func (r *Repository) FindWithPagination(tx *sqlx.Tx, offset, limit int64) (employees []Entity, err error) {
+	query := "SELECT id, name, created_at, updated_at FROM employee OFFSET $1 LIMIT $2 ;"
+	err = tx.Select(&employees, query, offset, limit)
+	return employees, err
+}
+
+func (r *Repository) GetTotal(tx *sqlx.Tx) (count int64, err error) {
+	err = tx.Get(&count, "SELECT COUNT(*) FROM employee")
+	return count, err
+}

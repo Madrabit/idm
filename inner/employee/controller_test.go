@@ -23,6 +23,10 @@ type MockService struct {
 	mock.Mock
 }
 
+func (svc *MockService) GetPage(request PageRequest) (PageResponse, error) {
+	panic("implement me")
+}
+
 func (svc *MockService) FindById(id IdRequest) (Response, error) {
 	args := svc.Called(id)
 	return args.Get(0).(Response), args.Error(1)
@@ -121,10 +125,10 @@ func TestController_FindById(t *testing.T) {
 		controller.RegisterRoutes()
 		fixedTime := time.Date(2025, time.June, 17, 20, 19, 30, 0, time.UTC)
 		employee := Response{
-			Id:       1,
-			Name:     "john doe",
-			CreateAt: fixedTime,
-			UpdateAt: fixedTime,
+			Id:        1,
+			Name:      "john doe",
+			CreatedAt: fixedTime,
+			UpdatedAt: fixedTime,
 		}
 		var req = httptest.NewRequest("GET", "/api/v1/employees/1", nil)
 		req.Header.Set("Content-Type", "application/json")
@@ -175,14 +179,14 @@ func TestController_GetAll(t *testing.T) {
 		fixedTime := time.Date(2025, time.June, 17, 20, 19, 30, 0, time.UTC)
 		entity := []Response{
 			{Id: 1,
-				Name:     "john doe",
-				CreateAt: fixedTime,
-				UpdateAt: fixedTime,
+				Name:      "john doe",
+				CreatedAt: fixedTime,
+				UpdatedAt: fixedTime,
 			},
 			{Id: 2,
-				Name:     "Ivan Ivan",
-				CreateAt: fixedTime,
-				UpdateAt: fixedTime,
+				Name:      "Ivan Ivan",
+				CreatedAt: fixedTime,
+				UpdatedAt: fixedTime,
 			},
 		}
 		svc.On("GetAll").Return(entity, nil)
@@ -231,14 +235,14 @@ func TestController_GetGroupById(t *testing.T) {
 		fixedTime := time.Date(2025, time.June, 17, 20, 19, 30, 0, time.UTC)
 		entity := []Response{
 			{Id: 1,
-				Name:     "john doe",
-				CreateAt: fixedTime,
-				UpdateAt: fixedTime,
+				Name:      "john doe",
+				CreatedAt: fixedTime,
+				UpdatedAt: fixedTime,
 			},
 			{Id: 2,
-				Name:     "Ivan Ivan",
-				CreateAt: fixedTime,
-				UpdateAt: fixedTime,
+				Name:      "Ivan Ivan",
+				CreatedAt: fixedTime,
+				UpdatedAt: fixedTime,
 			},
 		}
 		svc.On("GetGroupById", request).Return(entity, nil)
