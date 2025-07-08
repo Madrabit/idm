@@ -24,7 +24,8 @@ type Repo interface {
 	DeleteGroup(ids []int64) error
 	BeginTransaction() (*sqlx.Tx, error)
 	FindWithPagination(tx *sqlx.Tx, offset, limit int64) ([]Entity, error)
-	GetTotal(tx *sqlx.Tx) (count int64, err error)
+	FindWithFilter(tx *sqlx.Tx, offset, limit int64, name string) (employees []Entity, err error)
+	GetTotal(tx *sqlx.Tx, name string) (count int64, err error)
 	FindKeySetPagination(tx *sqlx.Tx, lastId, limit int64) ([]Entity, error)
 }
 
@@ -164,11 +165,17 @@ func (s *Service) GetPage(request PageRequest) (pageEmp PageResponse, err error)
 	}()
 	offset := request.PageNumber * request.PageSize
 	limit := request.PageSize
-	page, err := s.repo.FindWithPagination(tx, offset, limit)
+	name := request.TextFilter
+	var page []Entity
+	if len(name) >= 3 {
+		page, err = s.repo.FindWithFilter(tx, offset, limit, name)
+	} else {
+		page, err = s.repo.FindWithPagination(tx, offset, limit)
+	}
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return PageResponse{}, fmt.Errorf("employee service: get page")
 	}
-	total, err := s.repo.GetTotal(tx)
+	total, err := s.repo.GetTotal(tx, name)
 	if err != nil {
 		return PageResponse{}, fmt.Errorf("employee service: get total count of page")
 	}
@@ -207,11 +214,12 @@ func (s *Service) GetKeySetPage(request PageKeySetRequest) (pageEmp PageKeySetRe
 	}()
 	lastId := request.LastId
 	limit := request.PageSize
+	name := request.TextFilter
 	page, err := s.repo.FindKeySetPagination(tx, lastId, limit)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return PageKeySetResponse{}, fmt.Errorf("employee service: get page")
 	}
-	total, err := s.repo.GetTotal(tx)
+	total, err := s.repo.GetTotal(tx, name)
 	if err != nil {
 		return PageKeySetResponse{}, fmt.Errorf("employee service: get total count of page")
 	}

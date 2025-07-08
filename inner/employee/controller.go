@@ -198,9 +198,11 @@ func (c *Controller) GetPage(ctx fiber.Ctx) error {
 		c.logger.Error("get page of employee: wrong pageSize", zap.Error(err))
 		return common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
 	}
+	name := ctx.Query("textFilter")
 	request := PageRequest{
 		PageSize:   size,
 		PageNumber: number,
+		TextFilter: name,
 	}
 	employees, err := c.service.GetPage(request)
 	var reqErr *common.RequestValidationError

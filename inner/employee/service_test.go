@@ -19,15 +19,19 @@ type MockRepo struct {
 	mock.Mock
 }
 
-func (m *MockRepo) FindKeySetPagination(tx *sqlx.Tx, lastId, limit int64) ([]Entity, error) {
-	panic("implement me")
-}
-
 func (m *MockRepo) FindWithPagination(tx *sqlx.Tx, offset, limit int64) ([]Entity, error) {
 	panic("implement me")
 }
 
-func (m *MockRepo) GetTotal(tx *sqlx.Tx) (count int64, err error) {
+func (m *MockRepo) FindWithFilter(tx *sqlx.Tx, offset, limit int64, name string) (employees []Entity, err error) {
+	panic("implement me")
+}
+
+func (m *MockRepo) FindKeySetPagination(tx *sqlx.Tx, lastId, limit int64) ([]Entity, error) {
+	panic("implement me")
+}
+
+func (m *MockRepo) GetTotal(tx *sqlx.Tx, name string) (count int64, err error) {
 	panic("implement me")
 }
 
