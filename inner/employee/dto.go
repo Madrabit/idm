@@ -40,9 +40,21 @@ type PageRequest struct {
 	PageNumber int64 `validate:"min=0"`
 }
 
+type PageKeySetRequest struct {
+	LastId   int64 `validate:"min=0"`
+	PageSize int64 `validate:"min=1,max=100"`
+	IsNext   bool
+}
+
 type PageResponse struct {
 	Result     []Entity `json:"result"`
 	PageSize   int64    `json:"page_size" `
 	PageNumber int64    `json:"page_number"`
 	Total      int64    `json:"total"`
+}
+
+type PageKeySetResponse struct {
+	Result []Entity `json:"result"`
+	LastId int64    `json:"last_id"`
+	Total  int64    `json:"total"`
 }

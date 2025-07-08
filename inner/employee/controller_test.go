@@ -23,6 +23,10 @@ type MockService struct {
 	mock.Mock
 }
 
+func (svc *MockService) GetKeySetPage(request PageKeySetRequest) (PageKeySetResponse, error) {
+	panic("implement me")
+}
+
 func (svc *MockService) GetPage(request PageRequest) (PageResponse, error) {
 	panic("implement me")
 }

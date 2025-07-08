@@ -19,6 +19,10 @@ type MockRepo struct {
 	mock.Mock
 }
 
+func (m *MockRepo) FindKeySetPagination(tx *sqlx.Tx, lastId, limit int64) ([]Entity, error) {
+	panic("implement me")
+}
+
 func (m *MockRepo) FindWithPagination(tx *sqlx.Tx, offset, limit int64) ([]Entity, error) {
 	panic("implement me")
 }
