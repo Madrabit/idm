@@ -112,10 +112,11 @@ func (r *Repository) FindWithFilter(tx *sqlx.Tx, offset, limit int64, name strin
 func (r *Repository) GetTotal(tx *sqlx.Tx, name string) (count int64, err error) {
 	query := `SELECT COUNT(*) FROM employee WHERE 1 = 1 `
 	args := []interface{}{}
-	if len(name) >= 3 {
-		query += `AND name ILIKE $1`
+	if name != "" {
+		query += `AND name ILIKE ?`
 		args = append(args, "%"+name+"%")
 	}
+	query = sqlx.Rebind(sqlx.DOLLAR, query)
 	err = tx.Get(&count, query, args...)
 	return count, err
 }
