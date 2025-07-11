@@ -159,4 +159,41 @@ func TestPaginationIntegration(t *testing.T) {
 		a.NoError(err)
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
+	t.Run("Empty filter", func(t *testing.T) {
+		url := "/api/v1/employees/page?pageNumber=0&pageSize=3&textFilter="
+		req := httptest.NewRequest(http.MethodGet, url, nil)
+		resp, err := app.App.Test(req)
+		a.NoError(err)
+		a.Equal(http.StatusOK, resp.StatusCode)
+		defer func() {
+			if err := db.Close(); err != nil {
+				fmt.Println("error closing db")
+			}
+		}()
+	})
+
+	t.Run("short filter less then 3 symbols", func(t *testing.T) {
+		url := "/api/v1/employees/page?pageNumber=0&pageSize=3&textFilter=ab"
+		req := httptest.NewRequest(http.MethodGet, url, nil)
+		resp, err := app.App.Test(req)
+		a.NoError(err)
+		a.Equal(http.StatusOK, resp.StatusCode)
+		defer func() {
+			if err := db.Close(); err != nil {
+				fmt.Println("error closing db")
+			}
+		}()
+	})
+	t.Run("valid filter", func(t *testing.T) {
+		url := "/api/v1/employees/page?pageNumber=0&pageSize=3&textFilter=nam"
+		req := httptest.NewRequest(http.MethodGet, url, nil)
+		resp, err := app.App.Test(req)
+		a.NoError(err)
+		a.Equal(http.StatusOK, resp.StatusCode)
+		defer func() {
+			if err := db.Close(); err != nil {
+				fmt.Println("error closing db")
+			}
+		}()
+	})
 }

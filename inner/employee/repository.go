@@ -33,7 +33,7 @@ func (r *Repository) FindByNameTx(tx *sqlx.Tx, name string) (isExists bool, err 
 
 func (r *Repository) GetAll(ctx context.Context) ([]Entity, error) {
 	var employees []Entity
-	rows, err := r.db.QueryxContext(ctx, "SELECT * FROM employee")
+	rows, err := r.db.QueryxContext(ctx, "SELECT * FROM employee;")
 	if err != nil {
 		return employees, err
 	}
@@ -97,14 +97,29 @@ func (r *Repository) DeleteGroup(ids []int64) error {
 	return nil
 }
 
-func (r *Repository) FindWithPagination(tx *sqlx.Tx, offset, limit int64) (employees []Entity, err error) {
-	query := "SELECT id, name, created_at, updated_at FROM employee OFFSET $1 LIMIT $2 ;"
-	err = tx.Select(&employees, query, offset, limit)
+func (r *Repository) FindPageWithFilter(tx *sqlx.Tx, offset, limit int64, name string) (employees []Entity, err error) {
+	query := "SELECT id, name, created_at, updated_at FROM employee WHERE 1 = 1"
+	args := []interface{}{}
+	if name != "" {
+		query += " AND name ILIKE ?"
+		args = append(args, "%"+name+"%")
+	}
+	query += " OFFSET ? LIMIT ?"
+	args = append(args, offset, limit)
+	query = sqlx.Rebind(sqlx.DOLLAR, query)
+	err = tx.Select(&employees, query, args...)
 	return employees, err
 }
 
-func (r *Repository) GetTotal(tx *sqlx.Tx) (count int64, err error) {
-	err = tx.Get(&count, "SELECT COUNT(*) FROM employee")
+func (r *Repository) GetTotal(tx *sqlx.Tx, name string) (count int64, err error) {
+	query := `SELECT COUNT(*) FROM employee WHERE 1 = 1 `
+	args := []interface{}{}
+	if name != "" {
+		query += `AND name ILIKE ?`
+		args = append(args, "%"+name+"%")
+	}
+	query = sqlx.Rebind(sqlx.DOLLAR, query)
+	err = tx.Get(&count, query, args...)
 	return count, err
 }
 

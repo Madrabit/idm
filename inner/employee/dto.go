@@ -38,12 +38,14 @@ type IdsRequest struct {
 type PageRequest struct {
 	PageSize   int64 `validate:"min=1,max=100"`
 	PageNumber int64 `validate:"min=0"`
+	TextFilter string
 }
 
 type PageKeySetRequest struct {
-	LastId   int64 `validate:"min=0"`
-	PageSize int64 `validate:"min=1,max=100"`
-	IsNext   bool
+	LastId     int64 `validate:"min=0"`
+	PageSize   int64 `validate:"min=1,max=100"`
+	IsNext     bool
+	TextFilter string
 }
 
 type PageResponse struct {
