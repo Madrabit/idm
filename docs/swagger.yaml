@@ -1,0 +1,455 @@
+basePath: /api/v1
+definitions:
+  employee.IdsRequest:
+    properties:
+      ids:
+        items:
+          type: integer
+        minItems: 1
+        type: array
+    required:
+    - ids
+    type: object
+  employee.NameRequest:
+    properties:
+      name:
+        maxLength: 155
+        minLength: 2
+        type: string
+    required:
+    - name
+    type: object
+  employee.Response:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  role.IdsRequest:
+    properties:
+      ids:
+        items:
+          type: integer
+        minItems: 1
+        type: array
+    required:
+    - ids
+    type: object
+  role.NameRequest:
+    properties:
+      name:
+        maxLength: 155
+        minLength: 2
+        type: string
+    required:
+    - name
+    type: object
+  role.Response:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+info:
+  contact: {}
+  title: IDM API documentation
+paths:
+  /employees:
+    get:
+      description: Возвращает список всех сотрудников
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/employee.Response'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/employee.Response'
+      summary: Get all employees
+      tags:
+      - employees
+    post:
+      consumes:
+      - application/json
+      description: Creates a new employee based on the provided name.
+      parameters:
+      - description: Employee name payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/employee.NameRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ID of created employee
+          schema:
+            $ref: '#/definitions/employee.Response'
+        "400":
+          description: Bad request - validation or already exists error
+          schema:
+            $ref: '#/definitions/employee.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/employee.Response'
+      summary: Create new employee
+      tags:
+      - employees
+  /employees/{id}:
+    delete:
+      description: Удаляет сотрудника по ID
+      parameters:
+      - description: Employee ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: Deleted
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/employee.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/employee.Response'
+      summary: Delete employee by ID
+      tags:
+      - employees
+    get:
+      description: Получает одного сотрудника по ID
+      parameters:
+      - description: Employee ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/employee.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/employee.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/employee.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/employee.Response'
+      summary: Get employee by ID
+      tags:
+      - employees
+  /employees/batch-delete:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет нескольких сотрудников по списку ID
+      parameters:
+      - description: IDs
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/employee.IdsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Batch deleted
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/employee.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/employee.Response'
+      summary: Delete multiple employees by IDs
+      tags:
+      - employees
+  /employees/page:
+    get:
+      description: Возвращает сотрудников с пагинацией по номеру страницы
+      parameters:
+      - description: Page number
+        in: query
+        name: pageNumber
+        required: true
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        required: true
+        type: integer
+      - description: Filter by name
+        in: query
+        name: textFilter
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/employee.Response'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/employee.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/employee.Response'
+      summary: Get paginated employees (offset-based)
+      tags:
+      - employees
+  /employees/page-key-set:
+    get:
+      description: Возвращает сотрудников с пагинацией по ID (keyset)
+      parameters:
+      - description: Last ID
+        in: query
+        name: lastId
+        required: true
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/employee.Response'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/employee.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/employee.Response'
+      summary: Get keyset paginated employees
+      tags:
+      - employees
+  /employees/search:
+    post:
+      consumes:
+      - application/json
+      description: Получает сотрудников по списку ID
+      parameters:
+      - description: IDs
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/employee.IdsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/employee.Response'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/employee.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/employee.Response'
+      summary: Get employees by IDs
+      tags:
+      - employees
+  /roles:
+    get:
+      description: Получает список всех ролей
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/role.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/role.Response'
+      summary: Get all roles
+      tags:
+      - roles
+    post:
+      consumes:
+      - application/json
+      description: Создаёт новую роль по имени
+      parameters:
+      - description: Role name
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/role.NameRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/role.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/role.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/role.Response'
+      summary: Create role
+      tags:
+      - roles
+  /roles/{id}:
+    delete:
+      description: Удаляет роль по ID
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/role.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/role.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/role.Response'
+      summary: Delete role by ID
+      tags:
+      - roles
+    get:
+      description: Получает роль по её ID
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/role.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/role.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/role.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/role.Response'
+      summary: Get role by ID
+      tags:
+      - roles
+  /roles/batch-delete:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет роли по списку ID
+      parameters:
+      - description: IDs
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/role.IdsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/role.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/role.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/role.Response'
+      summary: Delete roles by IDs
+      tags:
+      - roles
+  /roles/search:
+    post:
+      consumes:
+      - application/json
+      description: Получает список ролей по переданным ID
+      parameters:
+      - description: IDs
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/role.IdsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/role.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/role.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/role.Response'
+      summary: Get roles by IDs
+      tags:
+      - roles
+swagger: "2.0"
