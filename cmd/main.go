@@ -17,6 +17,8 @@ import (
 	"time"
 )
 
+// @title IDM API documentation
+// @BasePath /api/v1
 func main() {
 	cfg := common.GetConfig(".env")
 	logger := common.NewLogger(cfg)
