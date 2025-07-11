@@ -3,7 +3,6 @@ package web
 import (
 	"bytes"
 	"github.com/gofiber/fiber/v3"
-	"idm/inner/common"
 	"net/http"
 	"runtime/debug"
 	"strings"
@@ -35,8 +34,7 @@ func HTTPHandler(h http.Handler) fiber.Handler {
 }
 
 type responseWriter struct {
-	ctx    fiber.Ctx
-	logger common.Logger
+	ctx fiber.Ctx
 }
 
 func (rw *responseWriter) Header() http.Header {
