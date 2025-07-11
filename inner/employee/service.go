@@ -23,8 +23,7 @@ type Repo interface {
 	Delete(id int64) error
 	DeleteGroup(ids []int64) error
 	BeginTransaction() (*sqlx.Tx, error)
-	FindWithPagination(tx *sqlx.Tx, offset, limit int64) ([]Entity, error)
-	FindWithFilter(tx *sqlx.Tx, offset, limit int64, name string) (employees []Entity, err error)
+	FindPageWithFilter(tx *sqlx.Tx, offset, limit int64, name string) (employees []Entity, err error)
 	GetTotal(tx *sqlx.Tx, name string) (count int64, err error)
 	FindKeySetPagination(tx *sqlx.Tx, lastId, limit int64) ([]Entity, error)
 }
@@ -167,11 +166,7 @@ func (s *Service) GetPage(request PageRequest) (pageEmp PageResponse, err error)
 	limit := request.PageSize
 	name := request.TextFilter
 	var page []Entity
-	if len(name) >= 3 {
-		page, err = s.repo.FindWithFilter(tx, offset, limit, name)
-	} else {
-		page, err = s.repo.FindWithPagination(tx, offset, limit)
-	}
+	page, err = s.repo.FindPageWithFilter(tx, offset, limit, name)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return PageResponse{}, fmt.Errorf("employee service: get page")
 	}

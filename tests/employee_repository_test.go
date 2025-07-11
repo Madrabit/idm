@@ -160,7 +160,7 @@ func TestEmployeeRepository(t *testing.T) {
 		if err != nil {
 			fmt.Println("error add employee at test")
 		}
-		got, err := repo.FindWithFilter(tx, 0, 3, "nam")
+		got, err := repo.FindPageWithFilter(tx, 0, 3, "nam")
 		a.Nil(err)
 		a.NotEmpty(got)
 		a.Len(got, 3)

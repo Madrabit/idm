@@ -23,7 +23,7 @@ func (m *MockRepo) FindWithPagination(tx *sqlx.Tx, offset, limit int64) ([]Entit
 	panic("implement me")
 }
 
-func (m *MockRepo) FindWithFilter(tx *sqlx.Tx, offset, limit int64, name string) (employees []Entity, err error) {
+func (m *MockRepo) FindPageWithFilter(tx *sqlx.Tx, offset, limit int64, name string) (employees []Entity, err error) {
 	panic("implement me")
 }
 

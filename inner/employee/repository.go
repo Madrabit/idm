@@ -97,15 +97,17 @@ func (r *Repository) DeleteGroup(ids []int64) error {
 	return nil
 }
 
-func (r *Repository) FindWithPagination(tx *sqlx.Tx, offset, limit int64) (employees []Entity, err error) {
-	query := "SELECT id, name, created_at, updated_at FROM employee OFFSET $1 LIMIT $2;"
-	err = tx.Select(&employees, query, offset, limit)
-	return employees, err
-}
-
-func (r *Repository) FindWithFilter(tx *sqlx.Tx, offset, limit int64, name string) (employees []Entity, err error) {
-	query := "SELECT id, name, created_at, updated_at FROM employee WHERE 1 = 1 AND name ILIKE $1 OFFSET $2 LIMIT $3;"
-	err = tx.Select(&employees, query, "%"+name+"%", offset, limit)
+func (r *Repository) FindPageWithFilter(tx *sqlx.Tx, offset, limit int64, name string) (employees []Entity, err error) {
+	query := "SELECT id, name, created_at, updated_at FROM employee WHERE 1 = 1"
+	args := []interface{}{}
+	if name != "" {
+		query += " AND name ILIKE ?"
+		args = append(args, "%"+name+"%")
+	}
+	query += " OFFSET ? LIMIT ?"
+	args = append(args, offset, limit)
+	query = sqlx.Rebind(sqlx.DOLLAR, query)
+	err = tx.Select(&employees, query, args...)
 	return employees, err
 }
 
