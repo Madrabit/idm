@@ -41,6 +41,17 @@ func (c *Controller) RegisterRoutes() {
 	c.server.GroupApiV1.Delete("/roles/:id", c.Delete)
 }
 
+// CreateRole godoc
+// @Summary      Create role
+// @Description  Создаёт новую роль по имени
+// @Tags         roles
+// @Accept       json
+// @Produce      json
+// @Param        request body NameRequest true "Role name"
+// @Success      200 {object} Response
+// @Failure      400 {object} Response
+// @Failure      500 {object} Response
+// @Router       /roles [post]
 func (c *Controller) CreateRole(ctx fiber.Ctx) error {
 	var request NameRequest
 	if err := ctx.Bind().Body(&request); err != nil {
@@ -62,6 +73,17 @@ func (c *Controller) CreateRole(ctx fiber.Ctx) error {
 	return common.OkResponse(ctx, newRoleId)
 }
 
+// FindById godoc
+// @Summary      Get role by ID
+// @Description  Получает роль по её ID
+// @Tags         roles
+// @Produce      json
+// @Param        id path int true "Role ID"
+// @Success      200 {object} Response
+// @Failure      400 {object} Response
+// @Failure      404 {object} Response
+// @Failure      500 {object} Response
+// @Router       /roles/{id} [get]
 func (c *Controller) FindById(ctx fiber.Ctx) error {
 	param := ctx.Params("id")
 	request, err := strconv.Atoi(param)
@@ -88,6 +110,14 @@ func (c *Controller) FindById(ctx fiber.Ctx) error {
 	return common.OkResponse(ctx, role)
 }
 
+// GetAll godoc
+// @Summary      Get all roles
+// @Description  Получает список всех ролей
+// @Tags         roles
+// @Produce      json
+// @Success      200 {object} Response
+// @Failure      500 {object} Response
+// @Router       /roles [get]
 func (c *Controller) GetAll(ctx fiber.Ctx) error {
 	roles, err := c.service.GetAll()
 	var notFoundErr *common.NotFoundError
@@ -103,6 +133,17 @@ func (c *Controller) GetAll(ctx fiber.Ctx) error {
 	return common.OkResponse(ctx, roles)
 }
 
+// GetGroupById godoc
+// @Summary      Get roles by IDs
+// @Description  Получает список ролей по переданным ID
+// @Tags         roles
+// @Accept       json
+// @Produce      json
+// @Param        request body IdsRequest true "IDs"
+// @Success      200 {object} Response
+// @Failure      400 {object} Response
+// @Failure      500 {object} Response
+// @Router       /roles/search [post]
 func (c *Controller) GetGroupById(ctx fiber.Ctx) error {
 	var request IdsRequest
 	if err := ctx.Bind().Body(&request); err != nil {
@@ -126,6 +167,16 @@ func (c *Controller) GetGroupById(ctx fiber.Ctx) error {
 	return common.OkResponse(ctx, roles)
 }
 
+// Delete godoc
+// @Summary      Delete role by ID
+// @Description  Удаляет роль по ID
+// @Tags         roles
+// @Produce      json
+// @Param        id path int true "Role ID"
+// @Success      200 {object} Response
+// @Failure      400 {object} Response
+// @Failure      500 {object} Response
+// @Router       /roles/{id} [delete]
 func (c *Controller) Delete(ctx fiber.Ctx) error {
 	param := ctx.Params("id")
 	request, err := strconv.Atoi(param)
@@ -150,6 +201,17 @@ func (c *Controller) Delete(ctx fiber.Ctx) error {
 	return nil
 }
 
+// DeleteGroup godoc
+// @Summary      Delete roles by IDs
+// @Description  Удаляет роли по списку ID
+// @Tags         roles
+// @Accept       json
+// @Produce      json
+// @Param        request body IdsRequest true "IDs"
+// @Success      200 {object} Response
+// @Failure      400 {object} Response
+// @Failure      500 {object} Response
+// @Router       /roles/batch-delete [delete]
 func (c *Controller) DeleteGroup(ctx fiber.Ctx) error {
 	var request IdsRequest
 	if err := ctx.Bind().Body(&request); err != nil {
