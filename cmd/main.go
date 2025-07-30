@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 	"idm/inner/common"
@@ -31,8 +32,22 @@ func main() {
 	}()
 	server := build(cfg, db, logger)
 	go func() {
-		if err := server.App.Listen(":8080"); err != nil {
-			logger.Panic("http server error: %v", zap.Error(err))
+		// загружаем сертификаты
+		cer, err := tls.LoadX509KeyPair(cfg.SslSert, cfg.SslKey)
+		if err != nil {
+			logger.Panic("failed certificate loading: %s", zap.Error(err))
+		}
+		// создаём конфигурацию TLS сервера
+		tlsConfig := &tls.Config{Certificates: []tls.Certificate{cer}}
+		// создаём слушателя https соединения
+		ln, err := tls.Listen("tcp", ":8080", tlsConfig)
+		if err != nil {
+			logger.Panic("failed TLS listener creating: %s", zap.Error(err))
+		}
+		// запускаем веб-сервер с новым TLS слушателем
+		err = server.App.Listener(ln)
+		if err != nil {
+			logger.Panic("http server error: %s", zap.Error(err))
 		}
 	}()
 	var wg = &sync.WaitGroup{}
