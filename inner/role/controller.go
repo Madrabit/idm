@@ -3,9 +3,11 @@ package role
 import (
 	"errors"
 	"github.com/gofiber/fiber/v3"
+	"github.com/golang-jwt/jwt/v5"
 	"go.uber.org/zap"
 	"idm/inner/common"
 	"idm/inner/web"
+	"slices"
 	"strconv"
 )
 
@@ -52,7 +54,13 @@ func (c *Controller) RegisterRoutes() {
 // @Failure      400 {object} Response
 // @Failure      500 {object} Response
 // @Router       /roles [post]
+// @Security BearerAuth
 func (c *Controller) CreateRole(ctx fiber.Ctx) error {
+	token := ctx.Locals(web.JwtKey).(*jwt.Token)
+	claims := token.Claims.(*web.IdmClaims)
+	if !slices.Contains(claims.RealmAccess.Roles, web.IdmAdmin) {
+		return common.ErrResponse(ctx, fiber.StatusForbidden, "Permission denied")
+	}
 	var request NameRequest
 	if err := ctx.Bind().Body(&request); err != nil {
 		c.logger.Error("create role", zap.Error(err))
@@ -84,7 +92,13 @@ func (c *Controller) CreateRole(ctx fiber.Ctx) error {
 // @Failure      404 {object} Response
 // @Failure      500 {object} Response
 // @Router       /roles/{id} [get]
+// @Security BearerAuth
 func (c *Controller) FindById(ctx fiber.Ctx) error {
+	token := ctx.Locals(web.JwtKey).(*jwt.Token)
+	claims := token.Claims.(*web.IdmClaims)
+	if !slices.Contains(claims.RealmAccess.Roles, web.IdmAdmin) || !slices.Contains(claims.RealmAccess.Roles, web.IdmUser) {
+		return common.ErrResponse(ctx, fiber.StatusForbidden, "Permission denied")
+	}
 	param := ctx.Params("id")
 	request, err := strconv.Atoi(param)
 	c.logger.Debug("find by id role: received request", zap.Any("request", request))
@@ -118,7 +132,13 @@ func (c *Controller) FindById(ctx fiber.Ctx) error {
 // @Success      200 {object} Response
 // @Failure      500 {object} Response
 // @Router       /roles [get]
+// @Security BearerAuth
 func (c *Controller) GetAll(ctx fiber.Ctx) error {
+	token := ctx.Locals(web.JwtKey).(*jwt.Token)
+	claims := token.Claims.(*web.IdmClaims)
+	if !slices.Contains(claims.RealmAccess.Roles, web.IdmAdmin) || !slices.Contains(claims.RealmAccess.Roles, web.IdmUser) {
+		return common.ErrResponse(ctx, fiber.StatusForbidden, "Permission denied")
+	}
 	roles, err := c.service.GetAll()
 	var notFoundErr *common.NotFoundError
 	if err != nil {
@@ -144,7 +164,13 @@ func (c *Controller) GetAll(ctx fiber.Ctx) error {
 // @Failure      400 {object} Response
 // @Failure      500 {object} Response
 // @Router       /roles/search [post]
+// @Security BearerAuth
 func (c *Controller) GetGroupById(ctx fiber.Ctx) error {
+	token := ctx.Locals(web.JwtKey).(*jwt.Token)
+	claims := token.Claims.(*web.IdmClaims)
+	if !slices.Contains(claims.RealmAccess.Roles, web.IdmAdmin) || !slices.Contains(claims.RealmAccess.Roles, web.IdmUser) {
+		return common.ErrResponse(ctx, fiber.StatusForbidden, "Permission denied")
+	}
 	var request IdsRequest
 	if err := ctx.Bind().Body(&request); err != nil {
 		c.logger.Error("get roles by ids", zap.Error(err))
@@ -177,7 +203,13 @@ func (c *Controller) GetGroupById(ctx fiber.Ctx) error {
 // @Failure      400 {object} Response
 // @Failure      500 {object} Response
 // @Router       /roles/{id} [delete]
+// @Security BearerAuth
 func (c *Controller) Delete(ctx fiber.Ctx) error {
+	token := ctx.Locals(web.JwtKey).(*jwt.Token)
+	claims := token.Claims.(*web.IdmClaims)
+	if !slices.Contains(claims.RealmAccess.Roles, web.IdmAdmin) {
+		return common.ErrResponse(ctx, fiber.StatusForbidden, "Permission denied")
+	}
 	param := ctx.Params("id")
 	request, err := strconv.Atoi(param)
 	c.logger.Debug("delete role: received request", zap.Any("request", request))
@@ -212,7 +244,13 @@ func (c *Controller) Delete(ctx fiber.Ctx) error {
 // @Failure      400 {object} Response
 // @Failure      500 {object} Response
 // @Router       /roles/batch-delete [delete]
+// @Security BearerAuth
 func (c *Controller) DeleteGroup(ctx fiber.Ctx) error {
+	token := ctx.Locals(web.JwtKey).(*jwt.Token)
+	claims := token.Claims.(*web.IdmClaims)
+	if !slices.Contains(claims.RealmAccess.Roles, web.IdmAdmin) {
+		return common.ErrResponse(ctx, fiber.StatusForbidden, "Permission denied")
+	}
 	var request IdsRequest
 	if err := ctx.Bind().Body(&request); err != nil {
 		c.logger.Error("delete group roles by ids", zap.Error(err))

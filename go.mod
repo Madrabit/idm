@@ -4,11 +4,13 @@ go 1.24.1
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
+	github.com/MicahParks/keyfunc v1.9.0
 	github.com/go-playground/validator/v10 v10.26.0
-	github.com/gofiber/adaptor/v2 v2.2.1
 	github.com/gofiber/contrib/fiberzap/v2 v2.1.6
+	github.com/gofiber/contrib/jwt v1.1.2
 	github.com/gofiber/fiber/v2 v2.52.8
 	github.com/gofiber/fiber/v3 v3.0.0-beta.4
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
@@ -20,6 +22,7 @@ require (
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
+	github.com/MicahParks/keyfunc/v2 v2.1.0 // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fxamacker/cbor/v2 v2.8.0 // indirect
@@ -32,6 +35,7 @@ require (
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/gofiber/schema v1.5.0 // indirect
 	github.com/gofiber/utils/v2 v2.0.0-beta.8 // indirect
+	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect

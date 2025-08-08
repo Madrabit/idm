@@ -63,6 +63,7 @@ definitions:
 info:
   contact: {}
   title: IDM API documentation
+  version: 1.0.0
 paths:
   /employees:
     get:
@@ -78,6 +79,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/employee.Response'
+      security:
+      - BearerAuth: []
       summary: Get all employees
       tags:
       - employees
@@ -107,6 +110,8 @@ paths:
           description: Internal server error
           schema:
             $ref: '#/definitions/employee.Response'
+      security:
+      - BearerAuth: []
       summary: Create new employee
       tags:
       - employees
@@ -130,6 +135,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/employee.Response'
+      security:
+      - BearerAuth: []
       summary: Delete employee by ID
       tags:
       - employees
@@ -158,6 +165,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/employee.Response'
+      security:
+      - BearerAuth: []
       summary: Get employee by ID
       tags:
       - employees
@@ -186,6 +195,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/employee.Response'
+      security:
+      - BearerAuth: []
       summary: Delete multiple employees by IDs
       tags:
       - employees
@@ -222,6 +233,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/employee.Response'
+      security:
+      - BearerAuth: []
       summary: Get paginated employees (offset-based)
       tags:
       - employees
@@ -254,6 +267,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/employee.Response'
+      security:
+      - BearerAuth: []
       summary: Get keyset paginated employees
       tags:
       - employees
@@ -286,6 +301,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/employee.Response'
+      security:
+      - BearerAuth: []
       summary: Get employees by IDs
       tags:
       - employees
@@ -303,6 +320,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/role.Response'
+      security:
+      - BearerAuth: []
       summary: Get all roles
       tags:
       - roles
@@ -332,6 +351,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/role.Response'
+      security:
+      - BearerAuth: []
       summary: Create role
       tags:
       - roles
@@ -359,6 +380,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/role.Response'
+      security:
+      - BearerAuth: []
       summary: Delete role by ID
       tags:
       - roles
@@ -389,6 +412,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/role.Response'
+      security:
+      - BearerAuth: []
       summary: Get role by ID
       tags:
       - roles
@@ -419,6 +444,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/role.Response'
+      security:
+      - BearerAuth: []
       summary: Delete roles by IDs
       tags:
       - roles
@@ -449,7 +476,14 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/role.Response'
+      security:
+      - BearerAuth: []
       summary: Get roles by IDs
       tags:
       - roles
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

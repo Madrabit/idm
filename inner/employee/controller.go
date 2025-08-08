@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/gofiber/fiber/v3"
+	"github.com/golang-jwt/jwt/v5"
 	"go.uber.org/zap"
 	"idm/inner/common"
 	"idm/inner/web"
+	"slices"
 	"strconv"
 	"time"
 )
@@ -59,7 +61,13 @@ func (c *Controller) RegisterRoutes() {
 // @Failure      400      {object}  Response  "Bad request - validation or already exists error"
 // @Failure      500      {object}  Response  "Internal server error"
 // @Router       /employees [post]
+// @Security BearerAuth
 func (c *Controller) CreateEmployee(ctx fiber.Ctx) error {
+	token := ctx.Locals(web.JwtKey).(*jwt.Token)
+	claims := token.Claims.(*web.IdmClaims)
+	if !slices.Contains(claims.RealmAccess.Roles, web.IdmAdmin) {
+		return common.ErrResponse(ctx, fiber.StatusForbidden, "Permission denied")
+	}
 	var request NameRequest
 	if err := ctx.Bind().Body(&request); err != nil {
 		c.logger.Error("create employee", zap.Error(err))
@@ -91,7 +99,13 @@ func (c *Controller) CreateEmployee(ctx fiber.Ctx) error {
 // @Failure      404 {object} Response
 // @Failure      500 {object} Response
 // @Router       /employees/{id} [get]
+// @Security BearerAuth
 func (c *Controller) FindById(ctx fiber.Ctx) error {
+	token := ctx.Locals(web.JwtKey).(*jwt.Token)
+	claims := token.Claims.(*web.IdmClaims)
+	if !slices.Contains(claims.RealmAccess.Roles, web.IdmAdmin) || !slices.Contains(claims.RealmAccess.Roles, web.IdmUser) {
+		return common.ErrResponse(ctx, fiber.StatusForbidden, "Permission denied")
+	}
 	param := ctx.Params("id")
 	request, err := strconv.Atoi(param)
 	c.logger.Debug("find by id employee: received request", zap.Any("request", request))
@@ -124,7 +138,13 @@ func (c *Controller) FindById(ctx fiber.Ctx) error {
 // @Success      200 {array} Response
 // @Failure      500 {object} Response
 // @Router       /employees [get]
+// @Security BearerAuth
 func (c *Controller) GetAll(ctx fiber.Ctx) error {
+	token := ctx.Locals(web.JwtKey).(*jwt.Token)
+	claims := token.Claims.(*web.IdmClaims)
+	if !slices.Contains(claims.RealmAccess.Roles, web.IdmAdmin) || !slices.Contains(claims.RealmAccess.Roles, web.IdmUser) {
+		return common.ErrResponse(ctx, fiber.StatusForbidden, "Permission denied")
+	}
 	myCxt := ctx.Context()
 	timeoutCtx, cancel := context.WithTimeout(myCxt, time.Second*5)
 	defer cancel()
@@ -155,7 +175,13 @@ func (c *Controller) GetAll(ctx fiber.Ctx) error {
 // @Failure      400 {object} Response
 // @Failure      500 {object} Response
 // @Router       /employees/search [post]
+// @Security BearerAuth
 func (c *Controller) GetGroupById(ctx fiber.Ctx) error {
+	token := ctx.Locals(web.JwtKey).(*jwt.Token)
+	claims := token.Claims.(*web.IdmClaims)
+	if !slices.Contains(claims.RealmAccess.Roles, web.IdmAdmin) || !slices.Contains(claims.RealmAccess.Roles, web.IdmUser) {
+		return common.ErrResponse(ctx, fiber.StatusForbidden, "Permission denied")
+	}
 	var request IdsRequest
 	if err := ctx.Bind().Body(&request); err != nil {
 		c.logger.Error("get employees by ids", zap.Error(err))
@@ -187,7 +213,13 @@ func (c *Controller) GetGroupById(ctx fiber.Ctx) error {
 // @Failure      400 {object} Response
 // @Failure      500 {object} Response
 // @Router       /employees/{id} [delete]
+// @Security BearerAuth
 func (c *Controller) Delete(ctx fiber.Ctx) error {
+	token := ctx.Locals(web.JwtKey).(*jwt.Token)
+	claims := token.Claims.(*web.IdmClaims)
+	if !slices.Contains(claims.RealmAccess.Roles, web.IdmAdmin) {
+		return common.ErrResponse(ctx, fiber.StatusForbidden, "Permission denied")
+	}
 	param := ctx.Params("id")
 	request, err := strconv.Atoi(param)
 	c.logger.Debug("delete employee: received request", zap.Any("request", request))
@@ -222,7 +254,13 @@ func (c *Controller) Delete(ctx fiber.Ctx) error {
 // @Failure      400 {object} Response
 // @Failure      500 {object} Response
 // @Router       /employees/batch-delete [delete]
+// @Security BearerAuth
 func (c *Controller) DeleteGroup(ctx fiber.Ctx) error {
+	token := ctx.Locals(web.JwtKey).(*jwt.Token)
+	claims := token.Claims.(*web.IdmClaims)
+	if !slices.Contains(claims.RealmAccess.Roles, web.IdmAdmin) {
+		return common.ErrResponse(ctx, fiber.StatusForbidden, "Permission denied")
+	}
 	var request IdsRequest
 	body := ctx.Body()
 	if err := json.Unmarshal(body, &request); err != nil {
@@ -256,7 +294,13 @@ func (c *Controller) DeleteGroup(ctx fiber.Ctx) error {
 // @Failure      400 {object} Response
 // @Failure      500 {object} Response
 // @Router       /employees/page [get]
+// @Security BearerAuth
 func (c *Controller) GetPage(ctx fiber.Ctx) error {
+	token := ctx.Locals(web.JwtKey).(*jwt.Token)
+	claims := token.Claims.(*web.IdmClaims)
+	if !slices.Contains(claims.RealmAccess.Roles, web.IdmAdmin) || !slices.Contains(claims.RealmAccess.Roles, web.IdmUser) {
+		return common.ErrResponse(ctx, fiber.StatusForbidden, "Permission denied")
+	}
 	number, err := strconv.ParseInt(ctx.Query("pageNumber", "0"), 10, 64)
 	if err != nil {
 		c.logger.Error("get page of employee: wrong pageNumber", zap.Error(err))
@@ -300,7 +344,13 @@ func (c *Controller) GetPage(ctx fiber.Ctx) error {
 // @Failure      400 {object} Response
 // @Failure      500 {object} Response
 // @Router       /employees/page-key-set [get]
+// @Security BearerAuth
 func (c *Controller) GetKeySetPage(ctx fiber.Ctx) error {
+	token := ctx.Locals(web.JwtKey).(*jwt.Token)
+	claims := token.Claims.(*web.IdmClaims)
+	if !slices.Contains(claims.RealmAccess.Roles, web.IdmAdmin) || !slices.Contains(claims.RealmAccess.Roles, web.IdmUser) {
+		return common.ErrResponse(ctx, fiber.StatusForbidden, "Permission denied")
+	}
 	lastId, err := strconv.ParseInt(ctx.Query("lastId", "1"), 10, 64)
 	if err != nil {
 		c.logger.Error("get page of employee: wrong id", zap.Error(err))
