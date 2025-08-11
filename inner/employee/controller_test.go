@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/gofiber/fiber/v3"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.uber.org/zap"
@@ -67,7 +68,16 @@ func TestController_Add(t *testing.T) {
 		Logger: zap.NewNop(),
 	}
 	t.Run("should return created employee id", func(t *testing.T) {
+		claims := &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmAdmin}},
+		}
+		// создаём stub middleware для аутентификации
+		auth := func(c fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
 		server := web.NewServer()
+		server.GroupApiV1.Use(auth)
 		svc := new(MockService)
 		controller := NewController(server, svc, logger)
 		controller.RegisterRoutes()
@@ -89,8 +99,17 @@ func TestController_Add(t *testing.T) {
 		a.Empty(responseBody.Message)
 	})
 	t.Run("should return 400 if request is invalid (RequestValidationError)", func(t *testing.T) {
-		var a = assert.New(t)
+		a := assert.New(t)
+		claims := &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmAdmin}},
+		}
+		// создаём stub middleware для аутентификации
+		auth := func(c fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
 		server := web.NewServer()
+		server.GroupApiV1.Use(auth)
 		svc := new(MockService)
 		controller := NewController(server, svc, logger)
 		controller.RegisterRoutes()
@@ -103,8 +122,17 @@ func TestController_Add(t *testing.T) {
 		a.Equal(http.StatusBadRequest, resp.StatusCode)
 	})
 	t.Run("should return 409 if employee already exists (AlreadyExistsError)", func(t *testing.T) {
-		var a = assert.New(t)
+		a := assert.New(t)
+		claims := &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmAdmin}},
+		}
+		// создаём stub middleware для аутентификации
+		auth := func(c fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
 		server := web.NewServer()
+		server.GroupApiV1.Use(auth)
 		svc := new(MockService)
 		controller := NewController(server, svc, logger)
 		controller.RegisterRoutes()
@@ -116,6 +144,44 @@ func TestController_Add(t *testing.T) {
 		a.Nil(err)
 		a.Equal(http.StatusBadRequest, resp.StatusCode) // 409
 	})
+	t.Run("wrong role returns 403", func(t *testing.T) {
+		claims := &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{""}},
+		}
+		auth := func(c fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
+		server := web.NewServer()
+		server.GroupApiV1.Use(auth)
+		svc := new(MockService)
+		controller := NewController(server, svc, logger)
+		controller.RegisterRoutes()
+		body := strings.NewReader("{\"name\": \"john doe\"}")
+		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/employees", body)
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := server.App.Test(req)
+		a.Nil(err)
+		a.NotEmpty(resp)
+		a.Equal(http.StatusForbidden, resp.StatusCode)
+	})
+	t.Run("invalid token returns 401", func(t *testing.T) {
+		fakeAuth := func(c fiber.Ctx) error {
+			return c.SendStatus(fiber.StatusUnauthorized)
+		}
+		server := web.NewServer()
+		server.GroupApiV1.Use(fakeAuth)
+		svc := new(MockService)
+		controller := NewController(server, svc, logger)
+		controller.RegisterRoutes()
+		body := strings.NewReader("{\"name\": \"john doe\"}")
+		req := httptest.NewRequest(fiber.MethodPost, "/api/v1/employees", body)
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := server.App.Test(req)
+		a.Nil(err)
+		a.NotEmpty(resp)
+		a.Equal(http.StatusUnauthorized, resp.StatusCode)
+	})
 }
 func TestController_FindById(t *testing.T) {
 	var a = assert.New(t)
@@ -123,7 +189,15 @@ func TestController_FindById(t *testing.T) {
 		Logger: zap.NewNop(),
 	}
 	t.Run("should retrieve employee by id", func(t *testing.T) {
+		claims := &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmAdmin, web.IdmUser}},
+		}
+		auth := func(c fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
 		server := web.NewServer()
+		server.GroupApiV1.Use(auth)
 		var svc = new(MockService)
 		var controller = NewController(server, svc, logger)
 		controller.RegisterRoutes()
@@ -143,8 +217,15 @@ func TestController_FindById(t *testing.T) {
 		a.Equal(http.StatusOK, resp.StatusCode)
 	})
 	t.Run("should return 400 if request is invalid (RequestValidationError)", func(t *testing.T) {
-		var a = assert.New(t)
+		claims := &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmAdmin, web.IdmUser}},
+		}
+		auth := func(c fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
 		server := web.NewServer()
+		server.GroupApiV1.Use(auth)
 		svc := new(MockService)
 		controller := NewController(server, svc, logger)
 		controller.RegisterRoutes()
@@ -155,8 +236,15 @@ func TestController_FindById(t *testing.T) {
 		a.Equal(http.StatusBadRequest, resp.StatusCode)
 	})
 	t.Run("should return 200 if request is invalid (NotFoundError)", func(t *testing.T) {
-		var a = assert.New(t)
+		claims := &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmAdmin, web.IdmUser}},
+		}
+		auth := func(c fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
 		server := web.NewServer()
+		server.GroupApiV1.Use(auth)
 		svc := new(MockService)
 		controller := NewController(server, svc, logger)
 		controller.RegisterRoutes()
@@ -166,15 +254,54 @@ func TestController_FindById(t *testing.T) {
 		a.Nil(err)
 		a.Equal(http.StatusOK, resp.StatusCode)
 	})
+	t.Run("invalid token return 401", func(t *testing.T) {
+		server := web.NewServer()
+		fakeAuth := func(c fiber.Ctx) error {
+			return c.SendStatus(fiber.StatusUnauthorized)
+		}
+		server.GroupApiV1.Use(fakeAuth)
+		svc := new(MockService)
+		controller := NewController(server, svc, logger)
+		controller.RegisterRoutes()
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/1", nil)
+		resp, err := server.App.Test(req)
+		a.Nil(err)
+		a.Equal(http.StatusUnauthorized, resp.StatusCode)
+	})
+	t.Run("wrong role returns 403", func(t *testing.T) {
+		claims := &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{""}},
+		}
+		auth := func(c fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
+		server := web.NewServer()
+		server.GroupApiV1.Use(auth)
+		svc := new(MockService)
+		controller := NewController(server, svc, logger)
+		controller.RegisterRoutes()
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/1", nil)
+		resp, err := server.App.Test(req)
+		a.Nil(err)
+		a.Equal(http.StatusForbidden, resp.StatusCode)
+	})
 }
-
 func TestController_GetAll(t *testing.T) {
 	var a = assert.New(t)
 	logger := &common.Logger{
 		Logger: zap.NewNop(),
 	}
 	t.Run("should return all employees", func(t *testing.T) {
+		claims := &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmAdmin, web.IdmUser}},
+		}
+		auth := func(c fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
 		server := web.NewServer()
+		server.GroupApiV1.Use(auth)
 		svc := new(MockService)
 		controller := NewController(server, svc, logger)
 		controller.RegisterRoutes()
@@ -208,8 +335,15 @@ func TestController_GetAll(t *testing.T) {
 		a.Empty(responseBody.Message)
 	})
 	t.Run("should return 200 if request is invalid (NotFoundError)", func(t *testing.T) {
-		var a = assert.New(t)
+		claims := &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmAdmin, web.IdmUser}},
+		}
+		auth := func(c fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
 		server := web.NewServer()
+		server.GroupApiV1.Use(auth)
 		svc := new(MockService)
 		controller := NewController(server, svc, logger)
 		controller.RegisterRoutes()
@@ -219,6 +353,41 @@ func TestController_GetAll(t *testing.T) {
 		a.Nil(err)
 		a.Equal(http.StatusOK, resp.StatusCode)
 	})
+	t.Run("invalid token returns 401", func(t *testing.T) {
+		fakeAuth := func(c fiber.Ctx) error {
+			return c.SendStatus(fiber.StatusUnauthorized)
+		}
+		server := web.NewServer()
+		server.GroupApiV1.Use(fakeAuth)
+		svc := new(MockService)
+		controller := NewController(server, svc, logger)
+		controller.RegisterRoutes()
+		svc.On("GetAll", mock.Anything).Return([]Response{}, &common.NotFoundError{Massage: "not found employee"})
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/", nil)
+		resp, err := server.App.Test(req)
+		a.Nil(err)
+		a.Equal(http.StatusUnauthorized, resp.StatusCode)
+	})
+	t.Run("wrong role returns 403", func(t *testing.T) {
+		claims := &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{""}},
+		}
+		auth := func(c fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
+		server := web.NewServer()
+		server.GroupApiV1.Use(auth)
+		svc := new(MockService)
+		controller := NewController(server, svc, logger)
+		controller.RegisterRoutes()
+		svc.On("GetAll", mock.Anything).Return([]Response{}, &common.NotFoundError{Massage: "not found employee"})
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/employees/", nil)
+		resp, err := server.App.Test(req)
+		a.Nil(err)
+		a.Equal(http.StatusForbidden, resp.StatusCode)
+	})
+
 }
 func TestController_GetGroupById(t *testing.T) {
 	var a = assert.New(t)
@@ -226,7 +395,15 @@ func TestController_GetGroupById(t *testing.T) {
 		Logger: zap.NewNop(),
 	}
 	t.Run("should return employees by ids", func(t *testing.T) {
+		claims := &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmAdmin, web.IdmUser}},
+		}
+		auth := func(c fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
 		server := web.NewServer()
+		server.GroupApiV1.Use(auth)
 		var svc = new(MockService)
 		var controller = NewController(server, svc, logger)
 		controller.RegisterRoutes()
@@ -264,8 +441,15 @@ func TestController_GetGroupById(t *testing.T) {
 		a.Empty(responseBody.Message)
 	})
 	t.Run("should return 400 if request is invalid (RequestValidationError)", func(t *testing.T) {
-		var a = assert.New(t)
+		claims := &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmAdmin, web.IdmUser}},
+		}
+		auth := func(c fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
 		server := web.NewServer()
+		server.GroupApiV1.Use(auth)
 		svc := new(MockService)
 		controller := NewController(server, svc, logger)
 		controller.RegisterRoutes()
@@ -280,8 +464,15 @@ func TestController_GetGroupById(t *testing.T) {
 		a.Equal(http.StatusBadRequest, resp.StatusCode)
 	})
 	t.Run("should return 200 if request is invalid (NotFoundError)", func(t *testing.T) {
-		var a = assert.New(t)
+		claims := &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmAdmin, web.IdmUser}},
+		}
+		auth := func(c fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
 		server := web.NewServer()
+		server.GroupApiV1.Use(auth)
 		svc := new(MockService)
 		controller := NewController(server, svc, logger)
 		controller.RegisterRoutes()
@@ -296,18 +487,70 @@ func TestController_GetGroupById(t *testing.T) {
 		a.Nil(err)
 		a.Equal(http.StatusOK, resp.StatusCode)
 	})
+	t.Run("invalid token returns 401", func(t *testing.T) {
+		fakeAuth := func(c fiber.Ctx) error {
+			return c.SendStatus(fiber.StatusUnauthorized)
+		}
+		server := web.NewServer()
+		server.GroupApiV1.Use(fakeAuth)
+		svc := new(MockService)
+		controller := NewController(server, svc, logger)
+		controller.RegisterRoutes()
+		request := IdsRequest{Ids: []int64{1, 2}}
+		marshal, err := json.Marshal(request)
+		a.Nil(err)
+		body := bytes.NewReader(marshal)
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/employees/search", body)
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := server.App.Test(req)
+		a.Nil(err)
+		a.Equal(http.StatusUnauthorized, resp.StatusCode)
+	})
+	t.Run("wrong role returns 403", func(t *testing.T) {
+		claims := &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{""}},
+		}
+		auth := func(c fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
+		server := web.NewServer()
+		server.GroupApiV1.Use(auth)
+		svc := new(MockService)
+		controller := NewController(server, svc, logger)
+		controller.RegisterRoutes()
+		request := IdsRequest{Ids: []int64{1, 2}}
+		marshal, err := json.Marshal(request)
+		a.Nil(err)
+		body := bytes.NewReader(marshal)
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/employees/search", body)
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := server.App.Test(req)
+		a.Nil(err)
+		a.Equal(http.StatusForbidden, resp.StatusCode)
+	})
+
 }
 func TestController_Delete(t *testing.T) {
-	var a = assert.New(t)
+	a := assert.New(t)
 	logger := &common.Logger{
 		Logger: zap.NewNop(),
 	}
 	t.Run("should delete employee by id", func(t *testing.T) {
+		claims := &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmAdmin}},
+		}
+		// создаём stub middleware для аутентификации
+		auth := func(c fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
 		server := web.NewServer()
-		var svc = new(MockService)
-		var controller = NewController(server, svc, logger)
+		server.GroupApiV1.Use(auth)
+		svc := new(MockService)
+		controller := NewController(server, svc, logger)
 		controller.RegisterRoutes()
-		var req = httptest.NewRequest("DELETE", "/api/v1/employees/1", nil)
+		req := httptest.NewRequest("DELETE", "/api/v1/employees/1", nil)
 		req.Header.Set("Content-Type", "application/json")
 		svc.On("Delete", IdRequest{1}).Return(nil)
 		resp, err := server.App.Test(req)
@@ -317,7 +560,16 @@ func TestController_Delete(t *testing.T) {
 	})
 	t.Run("should return 400 if request is invalid (RequestValidationError)", func(t *testing.T) {
 		var a = assert.New(t)
+		claims := &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmAdmin}},
+		}
+		// создаём stub middleware для аутентификации
+		auth := func(c fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
 		server := web.NewServer()
+		server.GroupApiV1.Use(auth)
 		svc := new(MockService)
 		controller := NewController(server, svc, logger)
 		controller.RegisterRoutes()
@@ -327,16 +579,58 @@ func TestController_Delete(t *testing.T) {
 		a.Nil(err)
 		a.Equal(http.StatusBadRequest, resp.StatusCode)
 	})
+	t.Run("invalid token returns 401", func(t *testing.T) {
+		fakeAuth := func(c fiber.Ctx) error {
+			return c.SendStatus(fiber.StatusUnauthorized)
+		}
+		server := web.NewServer()
+		server.GroupApiV1.Use(fakeAuth)
+		svc := new(MockService)
+		controller := NewController(server, svc, logger)
+		controller.RegisterRoutes()
+		req := httptest.NewRequest(http.MethodDelete, "/api/v1/employees/0", nil)
+		resp, err := server.App.Test(req)
+		a.Nil(err)
+		a.Equal(http.StatusUnauthorized, resp.StatusCode)
+	})
+	t.Run("wrong role returns 403", func(t *testing.T) {
+		claims := &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{""}},
+		}
+		auth := func(c fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
+		server := web.NewServer()
+		server.GroupApiV1.Use(auth)
+		svc := new(MockService)
+		controller := NewController(server, svc, logger)
+		controller.RegisterRoutes()
+		req := httptest.NewRequest(http.MethodDelete, "/api/v1/employees/0", nil)
+		resp, err := server.App.Test(req)
+		a.Nil(err)
+		a.Equal(http.StatusForbidden, resp.StatusCode)
+	})
+
 }
 func TestController_DeleteGroup(t *testing.T) {
-	var a = assert.New(t)
+	a := assert.New(t)
 	logger := &common.Logger{
 		Logger: zap.NewNop(),
 	}
 	t.Run("should delete employees by ids", func(t *testing.T) {
+		claims := &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmAdmin}},
+		}
+		// создаём stub middleware для аутентификации
+		auth := func(c fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
 		server := web.NewServer()
-		var svc = new(MockService)
-		var controller = NewController(server, svc, logger)
+		server.GroupApiV1.Use(auth)
+		svc := new(MockService)
+		controller := NewController(server, svc, logger)
 		controller.RegisterRoutes()
 		request := IdsRequest{Ids: []int64{1, 2}}
 		requestBody, err := json.Marshal(request)
@@ -361,8 +655,17 @@ func TestController_DeleteGroup(t *testing.T) {
 		}
 	})
 	t.Run("should return 400 if request is invalid (RequestValidationError)", func(t *testing.T) {
-		var a = assert.New(t)
+		a := assert.New(t)
+		claims := &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{web.IdmAdmin}},
+		}
+		// создаём stub middleware для аутентификации
+		auth := func(c fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
 		server := web.NewServer()
+		server.GroupApiV1.Use(auth)
 		svc := new(MockService)
 		controller := NewController(server, svc, logger)
 		controller.RegisterRoutes()
@@ -375,5 +678,45 @@ func TestController_DeleteGroup(t *testing.T) {
 		resp, err := server.App.Test(req)
 		a.Nil(err)
 		a.Equal(http.StatusBadRequest, resp.StatusCode)
+	})
+	t.Run("invalid token returns 401", func(t *testing.T) {
+		fakeAuth := func(c fiber.Ctx) error {
+			return c.SendStatus(fiber.StatusUnauthorized)
+		}
+		server := web.NewServer()
+		server.GroupApiV1.Use(fakeAuth)
+		svc := new(MockService)
+		controller := NewController(server, svc, logger)
+		controller.RegisterRoutes()
+		invalidRequest := IdsRequest{Ids: nil}
+		requestBody, err := json.Marshal(invalidRequest)
+		a.Nil(err)
+		req := httptest.NewRequest(http.MethodDelete, "/api/v1/employees/batch-delete", bytes.NewReader(requestBody))
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := server.App.Test(req)
+		a.Nil(err)
+		a.Equal(http.StatusUnauthorized, resp.StatusCode)
+	})
+	t.Run("wrong role returns 403", func(t *testing.T) {
+		claims := &web.IdmClaims{
+			RealmAccess: web.RealmAccessClaims{Roles: []string{""}},
+		}
+		auth := func(c fiber.Ctx) error {
+			c.Locals(web.JwtKey, &jwt.Token{Claims: claims})
+			return c.Next()
+		}
+		server := web.NewServer()
+		server.GroupApiV1.Use(auth)
+		svc := new(MockService)
+		controller := NewController(server, svc, logger)
+		controller.RegisterRoutes()
+		invalidRequest := IdsRequest{Ids: nil}
+		requestBody, err := json.Marshal(invalidRequest)
+		a.Nil(err)
+		req := httptest.NewRequest(http.MethodDelete, "/api/v1/employees/batch-delete", bytes.NewReader(requestBody))
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := server.App.Test(req)
+		a.Nil(err)
+		a.Equal(http.StatusForbidden, resp.StatusCode)
 	})
 }

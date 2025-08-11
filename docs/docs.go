@@ -17,6 +17,11 @@ const docTemplate = `{
     "paths": {
         "/employees": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Возвращает список всех сотрудников",
                 "tags": [
                     "employees"
@@ -41,6 +46,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Creates a new employee based on the provided name.",
                 "consumes": [
                     "application/json"
@@ -87,6 +97,11 @@ const docTemplate = `{
         },
         "/employees/batch-delete": {
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Удаляет нескольких сотрудников по списку ID",
                 "consumes": [
                     "application/json"
@@ -130,6 +145,11 @@ const docTemplate = `{
         },
         "/employees/page": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Возвращает сотрудников с пагинацией по номеру страницы",
                 "tags": [
                     "employees"
@@ -184,6 +204,11 @@ const docTemplate = `{
         },
         "/employees/page-key-set": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Возвращает сотрудников с пагинацией по ID (keyset)",
                 "tags": [
                     "employees"
@@ -232,6 +257,11 @@ const docTemplate = `{
         },
         "/employees/search": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Получает сотрудников по списку ID",
                 "consumes": [
                     "application/json"
@@ -281,6 +311,11 @@ const docTemplate = `{
         },
         "/employees/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Получает одного сотрудника по ID",
                 "tags": [
                     "employees"
@@ -323,6 +358,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Удаляет сотрудника по ID",
                 "tags": [
                     "employees"
@@ -358,6 +398,11 @@ const docTemplate = `{
         },
         "/roles": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Получает список всех ролей",
                 "produces": [
                     "application/json"
@@ -382,6 +427,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Создаёт новую роль по имени",
                 "consumes": [
                     "application/json"
@@ -428,6 +478,11 @@ const docTemplate = `{
         },
         "/roles/batch-delete": {
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Удаляет роли по списку ID",
                 "consumes": [
                     "application/json"
@@ -474,6 +529,11 @@ const docTemplate = `{
         },
         "/roles/search": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Получает список ролей по переданным ID",
                 "consumes": [
                     "application/json"
@@ -520,6 +580,11 @@ const docTemplate = `{
         },
         "/roles/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Получает роль по её ID",
                 "produces": [
                     "application/json"
@@ -565,6 +630,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Удаляет роль по ID",
                 "produces": [
                     "application/json"
@@ -696,12 +766,19 @@ const docTemplate = `{
                 }
             }
         }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
+	Version:          "1.0.0",
 	Host:             "",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},

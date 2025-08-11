@@ -2,6 +2,9 @@ package web
 
 import (
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/recover"
+	"github.com/gofiber/fiber/v3/middleware/requestid"
+	_ "github.com/gofiber/fiber/v3/middleware/requestid"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
@@ -11,8 +14,8 @@ import (
 func TestMiddleware(t *testing.T) {
 	t.Run("server panic", func(t *testing.T) {
 		a := assert.New(t)
-
 		server := NewServer()
+		server.App.Use(recover.New())
 		server.App.Get("/panic", func(ctx fiber.Ctx) error {
 			panic("crash server with panic")
 		})
@@ -25,6 +28,7 @@ func TestMiddleware(t *testing.T) {
 	t.Run("server alive after panic", func(t *testing.T) {
 		a := assert.New(t)
 		server := NewServer()
+		server.App.Use(recover.New())
 		server.App.Get("/panic", func(ctx fiber.Ctx) error {
 			panic("crash server with panic")
 		})
@@ -47,6 +51,7 @@ func TestMiddleware(t *testing.T) {
 func TestRequestIDMiddleware(t *testing.T) {
 	a := assert.New(t)
 	server := NewServer()
+	server.App.Use(requestid.New())
 	server.App.Get("/test", func(c fiber.Ctx) error {
 		requestID := c.Get("X-Request-ID")
 		if requestID == "" {

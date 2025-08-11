@@ -3,7 +3,10 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"github.com/gofiber/fiber/v3/middleware/recover"
+	"github.com/gofiber/fiber/v3/middleware/requestid"
 	"github.com/jmoiron/sqlx"
+	httpSwagger "github.com/swaggo/http-swagger"
 	"go.uber.org/zap"
 	"idm/inner/common"
 	"idm/inner/database"
@@ -20,6 +23,10 @@ import (
 
 // @title IDM API documentation
 // @BasePath /api/v1
+// @version 1.0.0
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func main() {
 	cfg := common.GetConfig(".env")
 	logger := common.NewLogger(cfg)
@@ -79,6 +86,10 @@ func gracefulShutdown(server *web.Server, wg *sync.WaitGroup, logger *common.Log
 
 func build(cfg common.Config, database *sqlx.DB, logger *common.Logger) *web.Server {
 	server := web.NewServer()
+	server.App.Use("/swagger/*", web.HTTPHandler(httpSwagger.WrapHandler))
+	server.App.Use(requestid.New())
+	server.App.Use(recover.New())
+	server.GroupApiV1.Use(web.AuthMiddleware(logger))
 	vld := validator.New()
 	employeeRepo := employee.NewRepository(database)
 	employeeService := employee.NewService(employeeRepo, vld)
