@@ -90,9 +90,8 @@ func (l *Logger) DebugCtx(
 	if rid == "" {
 		rid = uuid.NewString()
 		ctx.Set("X-Request-ID", rid)
-		ctx.Locals(ridKey, rid) // чтобы следующие миддлы/хендлеры увидели
+		ctx.Locals(ridKey, rid)
 	}
-
 	if rid != "" {
 		fields = append(fields, zap.String("request_id", rid))
 	}

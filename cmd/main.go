@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/recover"
 	"github.com/gofiber/fiber/v3/middleware/requestid"
@@ -96,10 +95,6 @@ func build(cfg common.Config, database *sqlx.DB, logger *common.Logger) *web.Ser
 		Header:    ridHeader,
 		Generator: func() string { return uuid.NewString() },
 	}))
-	server.App.Use(func(c fiber.Ctx) error {
-		fmt.Println("REQ X-Request-ID =", c.Get(fiber.HeaderXRequestID)) // request
-		return c.Next()
-	})
 	server.App.Use("/swagger/*", web.HTTPHandler(httpSwagger.WrapHandler))
 	server.App.Use(recover.New())
 	server.GroupApiV1.Use(web.AuthMiddleware(logger))
