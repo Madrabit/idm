@@ -3,8 +3,11 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
+	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/recover"
 	"github.com/gofiber/fiber/v3/middleware/requestid"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"go.uber.org/zap"
@@ -84,10 +87,20 @@ func gracefulShutdown(server *web.Server, wg *sync.WaitGroup, logger *common.Log
 	logger.Info("Server exiting")
 }
 
+const ridHeader = fiber.HeaderXRequestID
+
 func build(cfg common.Config, database *sqlx.DB, logger *common.Logger) *web.Server {
 	server := web.NewServer()
-	server.App.Use("/swagger/*", web.HTTPHandler(httpSwagger.WrapHandler))
 	server.App.Use(requestid.New())
+	server.App.Use(requestid.New(requestid.Config{
+		Header:    ridHeader,
+		Generator: func() string { return uuid.NewString() },
+	}))
+	server.App.Use(func(c fiber.Ctx) error {
+		fmt.Println("REQ X-Request-ID =", c.Get(fiber.HeaderXRequestID)) // request
+		return c.Next()
+	})
+	server.App.Use("/swagger/*", web.HTTPHandler(httpSwagger.WrapHandler))
 	server.App.Use(recover.New())
 	server.GroupApiV1.Use(web.AuthMiddleware(logger))
 	vld := validator.New()

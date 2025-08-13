@@ -1,8 +1,11 @@
 package common
 
 import (
+	"context"
 	"github.com/gofiber/contrib/fiberzap/v2"
 	"github.com/gofiber/fiber/v2/log"
+	"github.com/gofiber/fiber/v3"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -71,4 +74,37 @@ func parseLogLevel(level string) zapcore.Level {
 	default:
 		return zapcore.InfoLevel
 	}
+}
+
+var ridKey = "requestid"
+
+func (l *Logger) DebugCtx(
+	ctx fiber.Ctx,
+	msg string,
+	fields ...zap.Field,
+) {
+	rid := ctx.Get(fiber.HeaderXRequestID)
+	if rid == "" {
+		rid = ctx.Get("X-Request-ID")
+	}
+	if rid == "" {
+		rid = uuid.NewString()
+		ctx.Set("X-Request-ID", rid)
+		ctx.Locals(ridKey, rid) // чтобы следующие миддлы/хендлеры увидели
+	}
+
+	if rid != "" {
+		fields = append(fields, zap.String("request_id", rid))
+	}
+	l.Debug(msg, fields...)
+}
+
+func (l *Logger) ErrorCtx(
+	ctx context.Context,
+	msg string,
+	fields ...zap.Field) {
+	if rid, ok := ctx.Value(ridKey).(string); ok && rid != "" {
+		fields = append(fields, zap.String(string(ridKey), rid))
+	}
+	l.Error(msg, fields...)
 }
