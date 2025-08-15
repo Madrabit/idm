@@ -73,7 +73,7 @@ func (c *Controller) CreateEmployee(ctx fiber.Ctx) error {
 		c.logger.Error("create employee", zap.Error(err))
 		return common.ErrResponse(ctx, fiber.StatusBadRequest, err.Error())
 	}
-	c.logger.Debug("create employee: received request", zap.Any("request", request))
+	c.logger.DebugCtx(ctx, "create employee: received request", zap.Any("request", request))
 	newEmployeeId, err := c.service.Add(request)
 	var reqErr *common.RequestValidationError
 	var existsErr *common.AlreadyExistsError
@@ -142,7 +142,7 @@ func (c *Controller) FindById(ctx fiber.Ctx) error {
 func (c *Controller) GetAll(ctx fiber.Ctx) error {
 	token := ctx.Locals(web.JwtKey).(*jwt.Token)
 	claims := token.Claims.(*web.IdmClaims)
-	if !slices.Contains(claims.RealmAccess.Roles, web.IdmAdmin) || !slices.Contains(claims.RealmAccess.Roles, web.IdmUser) {
+	if !(slices.Contains(claims.RealmAccess.Roles, web.IdmAdmin) || slices.Contains(claims.RealmAccess.Roles, web.IdmUser)) {
 		return common.ErrResponse(ctx, fiber.StatusForbidden, "Permission denied")
 	}
 	myCxt := ctx.Context()
